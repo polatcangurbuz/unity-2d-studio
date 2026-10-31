@@ -1,7 +1,7 @@
 {
   "name": "unity-2d-studio",
   "displayName": "Unity 2D Studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Unity 2D game studio for Claude Code: clean code, consistent art and low token use. Skill, optional subagents and project hooks.",
   "author": { "name": "Polatcan Gürbüz" },
   "repository": "https://github.com/polatcangurbuz/unity-2d-studio",

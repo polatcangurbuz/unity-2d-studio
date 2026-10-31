@@ -18,9 +18,9 @@ subagents, no hooks (no Haiku scribe; the main agent runs map/rule checks). Eval
 
 ## What you get
 - `.studio/` state: brief, gdd, board, handoffs, devlogs, art bible, VFX specs, `PROJECT_MAP.md` (regex map, no LLM).
-- Scripts: `project_map.py`, `check_code.py`, `hooks.py`, `install_unity.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
+- Scripts: `project_map.py`, `check_code.py`, `hooks.py`, `install_unity.py`, `asmdefs.py`, `placeholder_sprites.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
   `palette.py` (palette table, contrast + colour-blind board), `vfx_spec.py` (palette-role VFX specs), `logo_sheet.py` (logo tests).
-- Unity 6 tested (6000.0.58f2): StudioSetup, SpriteImportRules (PPU/point filter/auto-slice `_sheet_WxH`), VfxBuilder.
+- Unity 6 + URP 17 tested: StudioSetup, SpriteImportRules, VfxBuilder, StudioEditorUtil, StudioConsoleBridge (errors → `.studio/`).
 - Not a Unity project (no `Assets/` + `ProjectSettings/ProjectVersion.txt`, e.g. Godot)? The skill steps aside.
 
 ## Evals (eval suite and workspace not shipped)
@@ -35,6 +35,6 @@ read 2026-10-30; 1h cache writes counted). e6/e7: v1.0.0 config with subagents i
 | e5 explosion VFX | **28% cheaper** | | **all 9** | **18% cheaper ($5.19 vs $6.33)** |
 n=1-3 runs each. e4 does one-time work (model notes, art bible, colour-blind board) that e8 reuses. Cost per passed check is
 lower on 8 of 9; pass rate 97-98% vs 51-64%. A delegated code task cost 13% more, so code isn't delegated by default (CHANGELOG).
-Installed-plugin check, 1 run each: e2 $0.52 (before $0.52-0.53), e6 $0.33 (before $0.32); hooks fired, scribe ran on Haiku.
+Plugin re-runs, 1 each: v1.0.0 e2 $0.52, e6 $0.33 (scribe on Haiku); v1.1.0 vs v1.0.0: e1 -13%, e2 +5%, e7 -23%, same checks pass.
 
 Credits and licences: [CREDITS.md](CREDITS.md). License: [MIT](LICENSE). Changes: [CHANGELOG.md](CHANGELOG.md).

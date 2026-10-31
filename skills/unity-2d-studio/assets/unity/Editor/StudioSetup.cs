@@ -51,7 +51,7 @@ namespace Studio.EditorTools
             }
 
             EnsurePackage("com.unity.test-framework", log);
-            CreateAsmdefs(ns, log);
+            StudioAsmdefs.Create(ns, log);
             ConfigureEditorSettings(log);
             CopyGitFiles(log);
             AssetDatabase.Refresh();
@@ -107,47 +107,6 @@ namespace Studio.EditorTools
             if (request.Status == StatusCode.Success) log.AppendLine($"+ package {request.Result.packageId}");
             else log.AppendLine($"! package {id} not added ({request.Error?.message ?? "timeout"}); add it in Package Manager");
         }
-
-        private static void CreateAsmdefs(string ns, StringBuilder log)
-        {
-            var testRefs = new[] { $"{ns}.Core", $"{ns}.Gameplay", "UnityEngine.TestRunner" };
-            var editor = new[] { "Editor" };
-
-            WriteAsmdef("Code/Core", $"{ns}.Core", ns + ".Core", new string[0], null, false, log);
-            WriteAsmdef("Code/Gameplay", $"{ns}.Gameplay", ns + ".Gameplay", new[] { $"{ns}.Core" }, null, false, log);
-            WriteAsmdef("Code/UI", $"{ns}.UI", ns + ".UI", new[] { $"{ns}.Core", $"{ns}.Gameplay" }, null, false, log);
-            WriteAsmdef("Code/Editor", $"{ns}.Editor", ns + ".Editor", new[] { $"{ns}.Core", $"{ns}.Gameplay", $"{ns}.UI" }, editor, false, log);
-            WriteAsmdef("Code/Tests/EditMode", $"{ns}.Tests.EditMode", ns + ".Tests",
-                testRefs.Append("UnityEditor.TestRunner").ToArray(), editor, true, log);
-            WriteAsmdef("Code/Tests/PlayMode", $"{ns}.Tests.PlayMode", ns + ".Tests", testRefs, null, true, log);
-        }
-
-        private static void WriteAsmdef(string folder, string name, string rootNamespace, string[] references,
-            string[] platforms, bool isTest, StringBuilder log)
-        {
-            var dir = Path.Combine(Application.dataPath, "_Project", folder);
-            if (Directory.GetFiles(dir, "*.asmdef").Length > 0) return;
-
-            var json = new StringBuilder("{\n");
-            json.Append($"    \"name\": \"{name}\",\n");
-            json.Append($"    \"rootNamespace\": \"{rootNamespace}\",\n");
-            json.Append($"    \"references\": {JsonArray(references)},\n");
-            json.Append($"    \"includePlatforms\": {JsonArray(platforms ?? new string[0])},\n");
-            json.Append("    \"excludePlatforms\": [],\n");
-            json.Append("    \"allowUnsafeCode\": false,\n");
-            json.Append($"    \"overrideReferences\": {(isTest ? "true" : "false")},\n");
-            json.Append($"    \"precompiledReferences\": {JsonArray(isTest ? new[] { "nunit.framework.dll" } : new string[0])},\n");
-            json.Append($"    \"autoReferenced\": {(isTest ? "false" : "true")},\n");
-            json.Append($"    \"defineConstraints\": {JsonArray(isTest ? new[] { "UNITY_INCLUDE_TESTS" } : new string[0])},\n");
-            json.Append("    \"versionDefines\": [],\n");
-            json.Append("    \"noEngineReferences\": false\n}\n");
-
-            File.WriteAllText(Path.Combine(dir, name + ".asmdef"), json.ToString());
-            log.AppendLine($"+ asmdef {name}");
-        }
-
-        private static string JsonArray(IEnumerable<string> items) =>
-            "[" + string.Join(", ", items.Select(i => $"\"{i}\"")) + "]";
 
         private static void ConfigureEditorSettings(StringBuilder log)
         {

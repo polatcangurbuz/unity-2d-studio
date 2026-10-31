@@ -38,7 +38,12 @@ Empty folder + new-game request → Kickoff. Anything else (`project.godot`, Pha
 15. Code/board task done = `.studio/handoff/<ID>.md` ≤20 lines (`goal | files | api | events | tests | open | next`) → board status.
     Advice/prompt-only requests: no handoff, no board edit.
     Map refresh + rule check run as plugin hooks: don't run them by hand; fix what the Stop hook reports.
+    check_code fails on: file >300 lines · `/// <summary>` · `/* */` or 2+ consecutive `//` lines · `FindObject(s)OfType`/`Find*ByType`/
+    `GameObject.Find`/`Find*WithTag`/`transform.Find("…")` · `GetComponent*` in Update/FixedUpdate/LateUpdate · public fields
+    (const, static readonly, events, properties OK) · files outside `Assets/_Project/` (ThirdParty/Plugins/StreamingAssets and URP's root assets OK).
+    Big editor builders: split from the start into Layout / Art / UI / Util files.
 16. User: their language, short. All questions in one batch with defaults.
+17. Create `.cs`/`.md` files with the Write tool, one per call; shell heredocs only for short single-file jobs (Git Bash breaks multi-file heredocs).
 
 ## Session start
 No `.studio/brief.md` → Kickoff (`studio-workflow.md § Kickoff`). Else read `.studio/board.md` + `.studio/PROJECT_MAP.md`.
@@ -83,5 +88,6 @@ Project `CLAUDE.md` ≤60 lines, telegraph pointers into `.studio/`.
 ## Scripts (`<skill>` = `${CLAUDE_SKILL_DIR}`; run `python <skill>/scripts/<name>`, also in references)
 `hooks.py` (PostToolUse → map if signatures changed; Stop → check_code on changed files) · `project_map.py [root] [--module NAME]` ·
 `devlog.py <agent> | producer --summary` (end of day, pre-filled from handoffs) · `check_code.py [root] [--files …]` ·
-`palette.py set role=#hex… | show` · `vfx_spec.py new <name> --preset … | build` · `logo_sheet.py <svg…>` · `install_unity.py [root]`.
+`palette.py set role=#hex… | show` · `vfx_spec.py new <name> --preset … | build` · `logo_sheet.py <svg…>` · `install_unity.py [root]` · `asmdefs.py [root]` (asmdefs + package refs, no Setup click needed) ·
+`placeholder_sprites.py [--force]` (16x16 placeholder PNGs from `.studio/art/placeholders.yaml`, default set if missing).
 Repetitive art/VFX/devlog work → these, not hand-written. Skill-only install (no hooks) → after `.cs` edits run `project_map.py` and `check_code.py --files <changed>` yourself.

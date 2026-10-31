@@ -42,6 +42,7 @@ add a silhouette row (black SVG shapes) only if the user wants to compare charac
 `assets/unity/Editor/SpriteImportRules.cs` (copied at kickoff with StudioSetup) applies to `Assets/_Project/Art/Sprites/`:
 PPU + Point filter + no compression + no mipmaps from `.studio/brief.md` (`style: pixel 16 PPU`); hi-res → bilinear default compression.
 Sheets named `<name>_sheet_<W>x<H>.png` auto-slice into W×H cells, pivot bottom-center. Name generated sheets that way.
+Before real art: `placeholder_sprites.py` → `SPR_*.png` from `.studio/art/placeholders.yaml` (palette roles), same import rules.
 
 ## Accessibility
 - Colour-blind: `palette.html` rows; never encode meaning by hue alone (add shape/icon/value).

@@ -56,3 +56,4 @@ _pool = new ObjectPool<T>(create: () => Instantiate(_prefab, transform), actionO
                                                                            // Assert.IsFalse(Services.IsEmpty); LogAssert.NoUnexpectedReceived()
 ```
 - AAA; spy/fake `IState` with counters for state machine tests. One behaviour per test.
+- Timed rules: derive ticks from the constant, `for (t = 0f; t < Lockout + Step; t += Step) Tick(Step);` never a magic tick count or `<=` on a float edge.

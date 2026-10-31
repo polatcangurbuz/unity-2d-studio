@@ -15,7 +15,9 @@ Each phase ends with a short user summary + go-ahead. Never skip ahead.
 | 5 | Release | build, profiling, checklist | qa-reviewer sign-off |
 
 ## Kickoff
-One batched message, user's language, defaults so "ok" works:
+Request already gives scope, art style and PPU (e.g. "vertical slice: one level, run/jump/coins, pixel 16 PPU") → ask nothing:
+fill the gaps with defaults marked `(default, unconfirmed)`, write `brief.md` + `gdd.md`, go straight to the slice,
+and list every assumption in ONE block in the final message. Otherwise one batched message, user's language, defaults so "ok" works:
 1. Genre + one-line pitch
 2. Art style: pixel / hand-drawn / vector (+ resolution, PPU)
 3. Target platform(s)
@@ -33,9 +35,9 @@ image-model: <name> | commercial: yes/no/unknown
 refs: <game> (why) · <game> (why)
 bridge: mcp | menu-scripts
 ```
-Then: `python <skill>/scripts/install_unity.py` (StudioSetup, SpriteImportRules, VfxBuilder → `Assets/_Project/Code/Editor/`, keeps existing)
+Then: `python <skill>/scripts/install_unity.py` (Editor tools → `Assets/_Project/Code/Editor/`, keeps existing) · `asmdefs.py` (code needn't wait for the click)
 · ask user for one click **Tools > Studio > Setup Project** (folders, asmdefs, Bootstrap scene, SampleScene move, git files) · seed `board.md` · run `project_map.py` once.
-Don't write gameplay code at kickoff.
+Don't write gameplay code at kickoff unless the request was full-scope (above).
 
 ## Pre-production
 `gdd.md`: pitch, core loop (verb → reward → escalation), 3-6 mechanics, win/lose, controls, slice scope.

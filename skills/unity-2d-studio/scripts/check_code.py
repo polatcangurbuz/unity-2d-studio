@@ -17,6 +17,8 @@ MAX_FILE_LINES = 300
 # Unity requires these at the Assets root, or packages put them there.
 ALLOWED_ROOTS = {"_Project", "ThirdParty", "Plugins", "StreamingAssets", "TextMesh Pro", "AddressableAssetsData",
                  "Gizmos", "Editor Default Resources", "Samples", "XR"}
+# URP and the Unity 6 templates create these at the Assets root themselves.
+ALLOWED_ROOT_FILES = {"UniversalRenderPipelineGlobalSettings.asset", "DefaultVolumeProfile.asset", "InputSystem_Actions.inputactions"}
 FIND_RE = re.compile(r"\b(FindObjectOfType|FindObjectsOfType|FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType"
                      r"|FindWithTag|FindGameObjectWithTag|FindGameObjectsWithTag)\b|\bGameObject\.Find\s*\(|(?<!\bShader)\.Find\s*\(\s*\"")
 UPDATE_RE = re.compile(r"\bvoid\s+(Update|FixedUpdate|LateUpdate)\s*\(\s*\)\s*\{")
@@ -86,7 +88,11 @@ def check_file(path, rel):
 
 def outside_project(rel):
     parts = rel.replace("\\", "/").split("/")
-    return parts[0] == "Assets" and len(parts) >= 2 and parts[1] not in ALLOWED_ROOTS
+    if parts[0] != "Assets" or len(parts) < 2:
+        return False
+    if len(parts) == 2 and parts[1] in ALLOWED_ROOT_FILES:
+        return False
+    return parts[1] not in ALLOWED_ROOTS
 
 
 def main():

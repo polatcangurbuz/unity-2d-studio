@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.1.0 · 2026-10-30
+From a real no-MCP session (Unity 6000.0.58, URP 17 2D, Windows): fewer error turns, less hand-written code.
+- Asmdefs get package references from `Packages/manifest.json`: Input System (Gameplay, UI), uGUI + TMP (UI, Editor),
+  URP Core/Universal/2D runtime (Gameplay, Editor), test runner (Editor). Existing asmdefs only gain missing refs.
+  Asmdef code moved to `StudioAsmdefs.cs`; new `scripts/asmdefs.py` writes the same asmdefs before the Setup click.
+  scene-and-folders § Setup: type → asmdef reference table.
+- `StudioConsoleBridge.cs`: compile errors and Error/Exception logs (play mode too) → `.studio/console.log` (reset each compile and
+  editor launch, repeats collapsed, caller `file:line`); Test Runner summary → `.studio/test-results.txt`. Agents read these, never ask for pastes.
+- `StudioEditorUtil.cs`: `Wire`, `LoadOrCreate<T>`, `EnsureFolder`, `EnsureLayer`, `AddToBuildSettings`, `Separator`, `NewActor`,
+  `SavePrefab`, `OpenOrCreateScene`. unity-bridge § Builder gotchas (NewScene unloads assets, composite + static body,
+  `compositeOperation`, Global Light2D, URP PixelPerfectCamera, `linearVelocity`).
+- `scripts/placeholder_sprites.py`: 16x16 placeholder PNGs (stdlib only) from `.studio/art/placeholders.yaml`, palette roles from
+  the art bible; default set of 7 (player, walker, flyer, coin, ground top/fill, flag). Never overwrites without `--force`.
+- Kickoff: a full-scope request (scope + style + PPU) skips the questions; defaults marked `(default, unconfirmed)`, listed once at the end.
+- Quick card: all check_code rules + split big builders; create files with the Write tool, not multi-file heredocs.
+- patterns § Tests: derive tick counts for timed rules from the constant.
+- check_code: URP root assets (`UniversalRenderPipelineGlobalSettings.asset`, `DefaultVolumeProfile.asset`) and Unity 6's
+  `InputSystem_Actions.inputactions` are no longer flagged as outside `_Project`.
+- Verified in Unity 6000.0.58f2 batch (URP 17.0.4, Input System 1.11.2): InputSystem/UI.Text/TMP/Light2D/URP PixelPerfectCamera
+  code compiles with no hand-added refs; a 55-line test builder exercised every helper; compile error → `console.log` in 1.6 s;
+  test results file written; play-mode NullReferenceException → `console.log` with `file:line`; sprites import at 16 PPU, Point, uncompressed.
+
 ## v1.0.0 · 2026-10-30
 First public release.
 - Claude Code plugin + single-plugin marketplace in one repo: `.claude-plugin/{plugin,marketplace}.json`, `skills/unity-2d-studio/`,
