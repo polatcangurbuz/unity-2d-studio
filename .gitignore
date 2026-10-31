@@ -1,0 +1,11 @@
+# Build workspace and dev-only material (not part of the release)
+unity-2d-studio-workspace/
+research/
+BUILD_PROGRESS.md
+.claude/skills/skill-creator/
+skill-creator/
+*.orig
+
+# Python
+__pycache__/
+*.pyc

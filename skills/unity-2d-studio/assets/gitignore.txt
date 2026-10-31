@@ -1,0 +1,56 @@
+# Unity-generated (rebuilt from Assets/ and Packages/)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Builds
+/[Bb]uild/
+/[Bb]uilds/
+/[Bb]uild[Rr]esults/
+*.apk
+*.aab
+*.ipa
+*.unitypackage
+*.app
+crashlytics-build.properties
+
+# Addressables build output (rebuilt per platform)
+/[Aa]ssets/[Ss]treamingAssets/aa/
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/ServerData/
+
+# IDE / OS
+.vs/
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.csproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+.DS_Store
+Thumbs.db
+sysinfo.txt
+
+# Asset Store tooling
+/[Aa]ssets/AssetStoreTools*
+
+# Local test output
+/.studio/test-results.xml

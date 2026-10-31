@@ -1,0 +1,12 @@
+{
+  "name": "unity-2d-studio",
+  "description": "Unity 2D Studio plugin",
+  "owner": { "name": "Polatcan Gürbüz" },
+  "plugins": [
+    {
+      "name": "unity-2d-studio",
+      "source": "./",
+      "description": "Unity 2D game studio: skill, optional subagents and project hooks"
+    }
+  ]
+}
