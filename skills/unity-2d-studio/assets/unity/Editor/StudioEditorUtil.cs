@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Tilemaps;
 
 namespace Studio.EditorTools
 {
@@ -133,6 +134,32 @@ namespace Studio.EditorTools
             var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
             return prefab;
+        }
+
+        // Call after SetTile and before SaveScene: colliders added in the same frame save an empty composite otherwise.
+        public static void BakeTilemapColliders(Tilemap tilemap, bool composite = true)
+        {
+            var go = tilemap.gameObject;
+            if (tilemap.GetUsedTilesCount() == 0) Debug.LogError($"[BakeTilemapColliders] {go.name} has no tiles; set tiles first", go);
+            if (composite)
+            {
+                // CompositeCollider2D adds a dynamic body if none exists, so the static one must come first.
+                if (!go.TryGetComponent<Rigidbody2D>(out var body)) body = go.AddComponent<Rigidbody2D>();
+                body.bodyType = RigidbodyType2D.Static;
+            }
+
+            if (!go.TryGetComponent<TilemapCollider2D>(out var tiles)) tiles = go.AddComponent<TilemapCollider2D>();
+            tiles.compositeOperation = composite ? Collider2D.CompositeOperation.Merge : Collider2D.CompositeOperation.None;
+            tiles.ProcessTilemapChanges();
+            if (!composite)
+            {
+                if (tiles.shapeCount == 0) Debug.LogError($"[BakeTilemapColliders] {go.name}: collider has no shapes", go);
+                return;
+            }
+
+            if (!go.TryGetComponent<CompositeCollider2D>(out var merged)) merged = go.AddComponent<CompositeCollider2D>();
+            merged.GenerateGeometry();
+            if (merged.pathCount == 0) Debug.LogError($"[BakeTilemapColliders] {go.name}: composite has no paths", go);
         }
 
         // Open/create the scene FIRST, then make assets: NewScene(Single) unloads unreferenced assets created before it.

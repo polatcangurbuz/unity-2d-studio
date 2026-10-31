@@ -9,7 +9,7 @@ reading only the reference section it needs; subagents for end of day (scribe, H
 /plugin install unity-2d-studio@unity-2d-studio
 ```
 Needs `python` 3.8+ on PATH. Hooks refresh `.studio/PROJECT_MAP.md` after signature changes, mark missing `file:line` refs in
-`.studio` notes `(UNVERIFIED …)` and run `check_code.py` on changed `.cs` files at Stop; outside a Unity project they exit at once.
+`.studio` notes `(UNVERIFIED …)` and run `check_code.py` on changed `.cs` files and `scene_check.py` on scenes Unity saved at Stop; outside a Unity project they exit at once.
 In a Unity project say "start a new 2D game": one batch of questions, Editor tools copied to `Assets/_Project/Code/Editor/`
 (never overwrites), then you click **Tools > Studio > Setup Project** (folders, asmdefs, Bootstrap scene, git files).
 
@@ -18,7 +18,7 @@ subagents, no hooks (no Haiku scribe; the main agent runs map/rule checks). Eval
 
 ## What you get
 - `.studio/` state: brief, gdd, board, handoffs, devlogs, art bible, VFX specs, `PROJECT_MAP.md` (regex map, no LLM).
-- Scripts: `project_map.py`, `check_code.py`, `hooks.py`, `install_unity.py`, `asmdefs.py`, `placeholder_sprites.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
+- Scripts: `project_map.py`, `check_code.py`, `scene_check.py`, `hooks.py`, `install_unity.py`, `asmdefs.py`, `placeholder_sprites.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
   `palette.py` (palette table, contrast + colour-blind board), `vfx_spec.py` (palette-role VFX specs), `logo_sheet.py` (logo tests).
 - Unity 6 + URP 17 tested: StudioSetup, SpriteImportRules, VfxBuilder, StudioEditorUtil, StudioConsoleBridge (errors → `.studio/`).
 - Not a Unity project (no `Assets/` + `ProjectSettings/ProjectVersion.txt`, e.g. Godot)? The skill steps aside.

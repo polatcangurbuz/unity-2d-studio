@@ -20,7 +20,7 @@ Once per session: ToolSearch "unity" / "scene" / "console" (names vary; don't ha
 - Repetitive/structural editor work → idempotent `[MenuItem("Tools/Studio/<Action>")]` script in `Assets/_Project/Code/Editor/` + ask for one click.
   Builders use `StudioEditorUtil` first: `Wire(obj, ("_field", value)…)` (private [SerializeField], Object[]/enum/int/float/bool/Vector2/3/Color/string),
   `LoadOrCreate<T>`, `EnsureFolder`, `EnsureLayer`, `AddToBuildSettings`, `Separator`, `NewActor(name, sprite, order, layer, out visual)`,
-  `SavePrefab`, `OpenOrCreateScene`. Placeholder art: `placeholder_sprites.py`, not pixel grids in C#.
+  `SavePrefab`, `OpenOrCreateScene`, `BakeTilemapColliders(tilemap, composite = true)`. Placeholder art: `placeholder_sprites.py`, not pixel grids in C#.
 - Console: `StudioConsoleBridge` writes compile errors + Error/Exception logs (play mode too) to `.studio/console.log` (reset each compile)
   and Test Runner summaries to `.studio/test-results.txt`. After code changes tell the user "switch to Unity" (it compiles on focus),
   then read those files. Never ask the user to paste logs. Tests: user runs Test Runner → EditMode → Run All, or batch:
@@ -30,6 +30,8 @@ Once per session: ToolSearch "unity" / "scene" / "console" (names vary; don't ha
 ## Builder gotchas
 - `EditorSceneManager.NewScene(…, Single)` unloads unreferenced assets: SOs created before it turn null. Open/create the scene FIRST (`OpenOrCreateScene`).
 - `CompositeCollider2D` auto-adds a dynamic `Rigidbody2D`: add the Rigidbody2D first, set `bodyType = Static`, then the composite.
+- Tilemap colliders: `SetTile` all tiles, then `BakeTilemapColliders` (body, colliders, ProcessTilemapChanges, GenerateGeometry) before `SaveScene`;
+  colliders added before tiles otherwise save an empty composite (player falls through).
 - Unity 6: `TilemapCollider2D.compositeOperation = Collider2D.CompositeOperation.Merge`, not `usedByComposite`.
 - URP 2D Renderer: Lit sprites are black without a Global `Light2D` in the scene.
 - URP `PixelPerfectCamera` (`UnityEngine.Rendering.Universal`) ≠ `com.unity.2d.pixel-perfect` (`UnityEngine.U2D`); with URP use the first.

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+From a session where a builder saved an empty tilemap composite and the error was only found after the user reported it.
+- `StudioEditorUtil.BakeTilemapColliders(tilemap, composite)`: static body → TilemapCollider2D (Merge) → `ProcessTilemapChanges` →
+  CompositeCollider2D → `GenerateGeometry`; LogError on no tiles / no paths. unity-bridge: helper list + one gotcha line.
+- `scripts/scene_check.py` (regex, no Unity): empty CompositeCollider2D, unassigned `_camelCase` refs in project scripts,
+  Sprite-Lit material in a scene without Light2D. Stop hook runs it on `.unity`/`.prefab` saved since the previous Stop.
+- Quick card: scene-building task not done before one Play with a clean `console.log`; unclear runtime bug → `[DIAG]` LogError + one Play first.
+- gitignore: hook state (`.pending_check*`, `.scene_stamp`) and bridge output (`console.log`, `test-results.txt`).
+- Verified in Unity 6000.0.58f2 batch: colliders-before-tiles without bake → `m_Paths: []` (flagged), same order + bake → 6 paths;
+  tilemap with no tiles → 2 lines in `console.log`; scene_check found all 3 issue types; hook reports once, silent next Stop.
+
 ## v1.1.0 · 2026-10-30
 From a real no-MCP session (Unity 6000.0.58, URP 17 2D, Windows): fewer error turns, less hand-written code.
 - Asmdefs get package references from `Packages/manifest.json`: Input System (Gameplay, UI), uGUI + TMP (UI, Editor),

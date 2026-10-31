@@ -6,8 +6,10 @@ post-edit: PostToolUse on Edit/Write/MultiEdit. For a .cs file: remember it for 
            A .studio note (.md): devlog.py --check-refs marks bad file:line refs "(UNVERIFIED …)" in place and tells Claude
            (exit 2) before it writes its reply.
 stop:      Stop / SubagentStop. Runs check_code.py on the remembered files only. Clean → silent exit 0.
+           Also runs scene_check.py on .unity/.prefab files under Assets/_Project saved since the previous Stop.
            Violations → listed on stderr, exit 2 (Claude keeps working to fix them).
 """
+import glob
 import json
 import os
 import subprocess
@@ -15,6 +17,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PENDING = os.path.join(".studio", ".pending_check")
+SCENE_STAMP = os.path.join(".studio", ".scene_stamp")
 
 
 def find_root(path):
@@ -58,27 +61,51 @@ def post_edit(event):
     return 0
 
 
-def stop(event):
-    root = find_root(event.get("cwd") or os.getcwd())
-    pending = os.path.join(root, PENDING) if root else ""
-    if not pending or not os.path.exists(pending):
-        return 0
+def code_report(root):
+    pending = os.path.join(root, PENDING)
+    if not os.path.exists(pending):
+        return ""
     files = [f for f in open(pending, encoding="utf-8").read().split() if os.path.exists(os.path.join(root, f))]
-    if not files:
+    result = run("check_code.py", root, "--files", *files) if files else None
+    if not result or result.returncode == 0:
         os.remove(pending)
-        return 0
-    result = run("check_code.py", root, "--files", *files)
-    if result.returncode == 0:
-        os.remove(pending)
-        return 0
+        return ""
     report = result.stdout.strip()
     last = pending + ".last"
     # Report already shown and unchanged (ignored or unfixable) → stay silent instead of repeating it every turn.
     if os.path.exists(last) and open(last, encoding="utf-8").read() == report:
-        return 0
+        return ""
     with open(last, "w", encoding="utf-8") as fh:
         fh.write(report)
-    sys.stderr.write("check_code.py found rule violations in files you changed; fix them:\n" + report + "\n")
+    return "check_code.py found rule violations in files you changed; fix them:\n" + report
+
+
+def scene_report(root):
+    # Unity, not Claude, writes scenes (builder clicks), so look at what changed since the previous Stop.
+    stamp = os.path.join(root, SCENE_STAMP)
+    if not os.path.isdir(os.path.dirname(stamp)):
+        return ""
+    since = os.path.getmtime(stamp) if os.path.exists(stamp) else None
+    open(stamp, "w").close()
+    if since is None:
+        return ""
+    base = os.path.join(root, "Assets", "_Project")
+    changed = [os.path.relpath(p, root) for ext in ("unity", "prefab")
+               for p in glob.glob(os.path.join(base, "**", "*." + ext), recursive=True) if os.path.getmtime(p) > since]
+    result = run("scene_check.py", root, "--files", *changed) if changed else None
+    if not result or result.returncode == 0:
+        return ""
+    return "scene_check.py: scenes/prefabs Unity saved since your last turn; fix the builder, not the YAML:\n" + result.stdout.strip()
+
+
+def stop(event):
+    root = find_root(event.get("cwd") or os.getcwd())
+    if not root:
+        return 0
+    reports = [r for r in (code_report(root), scene_report(root)) if r]
+    if not reports:
+        return 0
+    sys.stderr.write("\n".join(reports) + "\n")
     return 2
 
 
