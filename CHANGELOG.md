@@ -32,6 +32,37 @@ code-review posts and plugins, Claude-Code-Game-Studios, ccpm, ralph-loop).
 - Not adopted, on purpose: more agents, Agent Teams, worktrees, a separate `features.json` (board acceptance covers it).
 - Not re-measured yet: e1-e9 evals with these changes.
 
+From a real plugin run (local `--plugin-dir`, headless): one-screen vertical slice in a fresh Unity 6000.0.58 URP (3D template)
+project, gameplay-coder + vfx-artist in parallel, then `/unity-2d-studio:review` with 3 parallel qa-reviewers.
+Confirmed: hook input carries `agent_id`/`agent_type`; per-agent state kept parallel reports apart; only the producer wrote the
+board; agents stayed in scope and wrote handoffs; qa never edited code. Found and fixed:
+- 18 compile errors after the first Unity focus: builders lacked `using Studio.EditorTools;` (no reference named the namespace)
+  and nothing compiled before "done". New `scripts/compile_check.py`: dotnet build of Unity's generated `.csproj` for the changed
+  files' assemblies (Stop hook; ~1.5 s incremental; skipped without dotnet/.csproj or with `STUDIO_DOTNET_CHECK=0`), and
+  `--editor-log`: last compile's errors from Unity's own Editor.log (found the same 18). check_code `missing-using` rule.
+- `console.log` never appeared: the bridge came in the same first compile as the broken builders, and Unity loads no new code
+  after a failed compile. status.py now falls back to Editor.log.
+- Obstacles never spawned, no VFX/shake: the builder loaded assets before `NewScene(Single)`, which unloaded them, and `Wire`
+  saved null without a word. `StudioEditorUtil.BuildScene(path, scene => …)` fixes the order; `Wire` logs null/destroyed values;
+  scene_check calls 2+ empty refs on one component a wiring bug instead of "optional? ignore". Quick card carries both rules.
+- Scenes the user built between sessions went unreported: SessionStart refreshes the map (scenes are now in its hash) and
+  runs scene_check on scenes saved since the last stop; the Stop hook refreshes the map when Unity saved scenes.
+- qa failed a task on a stale play error: `console.log` lines are `[HH:mm:ss]`-stamped, each Play replaces the previous Play's
+  lines (`play start`), `BuildScene` writes `mark build <scene>`, Unity package errors are `package-…` and counted apart.
+- `VfxBuilder` used legacy particle shaders (invisible in URP): URP `Particles/Unlit` (alpha/additive) first, legacy as fallback.
+- Handoffs without `# <ID> <title> · <agent> · <date>` dropped out of end of day: agents get the header line, the SubagentStop
+  hook checks it once, devlog.py falls back to the board owner and finds bare file names by name.
+- VFX blocked without an art bible: `vfx_spec.py` uses the placeholder roles `(default, unconfirmed)`.
+- Producer finished vfx-artist's blocked task but left its handoff "blocked": rule to update it; status.py flags such handoffs.
+- `/review` with ≤3 tasks and ≤15 files → one qa-reviewer call instead of one per task.
+- check_code: Unity 6 URP template `Assets/Settings/`, `TutorialInfo/`, `Readme.asset` no longer flagged.
+- Run cost: build $2.32; review run reported $3.12 (3 qa-reviewers).
+- Re-run of `/unity-2d-studio:review` in a fresh session after these fixes: ONE qa-reviewer call for 3 tasks, $0.49 (was $3.12).
+  Verdicts matched the evidence: T-004 pass (no error after `play start`), T-002 unverified (tests never ran), T-003 unverified
+  (no runtime proof) + the stale handoff that SessionStart status flagged. Two follow-ups: console.log's header keeps the last
+  compile result (`play · compile ok`) instead of only the last event, and status.py counts untagged `Packages/`-only lines
+  (older bridge) as package errors.
+
 ## v1.1.0 · 2026-10-30
 From a real no-MCP session (Unity 6000.0.58, URP 17 2D, Windows): fewer error turns, less hand-written code.
 - Asmdefs get package references from `Packages/manifest.json`: Input System (Gameplay, UI), uGUI + TMP (UI, Editor),

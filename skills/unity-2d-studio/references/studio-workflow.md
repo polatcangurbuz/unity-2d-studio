@@ -38,6 +38,8 @@ bridge: mcp | menu-scripts
 Then: `python <skill>/scripts/install_unity.py` (Editor tools → `Assets/_Project/Code/Editor/`, keeps existing) · `asmdefs.py` (code needn't wait for the click)
 · ask user for one click **Tools > Studio > Setup Project** (folders, asmdefs, Bootstrap scene, SampleScene move, git files) · seed `board.md` · run `project_map.py` once.
 Don't write gameplay code at kickoff unless the request was full-scope (above).
+Full-scope kickoff with no art bible yet: `placeholder_sprites.py` and `vfx_spec.py` use the placeholder palette roles
+(`background midground interactive hazard reward outline`, marked `(default, unconfirmed)`); art-director replaces them later with `palette.py set`.
 
 ## Pre-production
 `gdd.md`: pitch, core loop (verb → reward → escalation), 3-6 mechanics, win/lose, controls, slice scope.

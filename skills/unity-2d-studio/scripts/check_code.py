@@ -16,11 +16,14 @@ from project_map import STRIP_RE, TYPE_RE, match_brace, strip_code, top_level  #
 MAX_FILE_LINES = 300
 # Unity requires these at the Assets root, or packages put them there.
 ALLOWED_ROOTS = {"_Project", "ThirdParty", "Plugins", "StreamingAssets", "TextMesh Pro", "AddressableAssetsData",
-                 "Gizmos", "Editor Default Resources", "Samples", "XR"}
+                 "Gizmos", "Editor Default Resources", "Samples", "XR", "TutorialInfo", "Settings"}
 # URP and the Unity 6 templates create these at the Assets root themselves.
-ALLOWED_ROOT_FILES = {"UniversalRenderPipelineGlobalSettings.asset", "DefaultVolumeProfile.asset", "InputSystem_Actions.inputactions"}
+# Unity 6 URP templates also ship Settings/ (RP assets), TutorialInfo/ + Readme.asset.
+ALLOWED_ROOT_FILES = {"UniversalRenderPipelineGlobalSettings.asset", "DefaultVolumeProfile.asset", "InputSystem_Actions.inputactions",
+                      "Readme.asset"}
 FIND_RE = re.compile(r"\b(FindObjectOfType|FindObjectsOfType|FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType"
                      r"|FindWithTag|FindGameObjectWithTag|FindGameObjectsWithTag)\b|\bGameObject\.Find\s*\(|(?<!\bShader)\.Find\s*\(\s*\"")
+STUDIO_USE_RE = re.compile(r"\b(StudioEditorUtil|StudioConsoleBridge|StudioSetup|StudioAsmdefs|VfxBuilder)\s*\.")
 UPDATE_RE = re.compile(r"\bvoid\s+(Update|FixedUpdate|LateUpdate)\s*\(\s*\)\s*\{")
 GETCOMP_RE = re.compile(r"\b(GetComponent|GetComponents|GetComponentInChildren|GetComponentInParent)\b")
 PUBLIC_FIELD_RE = re.compile(
@@ -80,6 +83,11 @@ def check_file(path, rel):
                 continue
             ln = line_at(src, open_idx + 1) + body.count("\n", 0, f.start(2))
             issues.append((ln, "public-field", f"public field '{f.group(3)}'; use [SerializeField] private or a property"))
+
+    # Studio Editor tools live in Studio.EditorTools; builders in the game's Editor namespace need the using.
+    m = STUDIO_USE_RE.search(src)
+    if m and not re.search(r"^\s*using\s+Studio\.EditorTools\s*;|^\s*namespace\s+Studio\.EditorTools\b", raw, re.M):
+        issues.append((line_at(src, m.start()), "missing-using", f"{m.group(1)} used without 'using Studio.EditorTools;'"))
 
     if outside_project(rel):
         issues.append((1, "location", "outside Assets/_Project/"))

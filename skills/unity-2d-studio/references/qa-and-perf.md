@@ -29,6 +29,8 @@ CI/pre-commit option: `python <skill>/scripts/check_code.py --quiet || exit 1`
 9. YAGNI: no unrequested asmdef/menu/base class; no generic base/wrapper with one user; pools use `ObjectPool<T>` directly.
 10. `Assets/_Project/`, namespace = asmdef, one class per file. Map refreshed; handoff ≤20 lines, accurate.
 Findings (telegraph, handoff `review:`): `file:line | problem | fix`.
+console.log evidence: only lines after the last `play start` belong to the current Play; `package-…` lines are Unity packages,
+not the task; a play error older than the last `mark build` or scene save → stale, say `unverified`, never `fail`.
 
 ## Budgets
 Per platform in `gdd.md` § Tech. Mid mobile / PC:

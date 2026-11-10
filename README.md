@@ -8,7 +8,7 @@ reading only the reference section it needs; subagents for end of day (scribe, H
 /plugin marketplace add polatcangurbuz/unity-2d-studio
 /plugin install unity-2d-studio@unity-2d-studio
 ```
-Needs `python` 3.8+ on PATH. Hooks refresh `.studio/PROJECT_MAP.md` after signature changes, mark missing `file:line` refs in
+Needs `python` 3.8+ on PATH; with the .NET SDK (`dotnet`) the Stop hook also compiles changed C# before you switch to Unity. Hooks refresh `.studio/PROJECT_MAP.md` after signature changes, mark missing `file:line` refs in
 `.studio` notes `(UNVERIFIED …)`, run `check_code.py` on changed `.cs` files and `scene_check.py` on scenes Unity saved at Stop
 (per agent, so parallel subagents don't mix reports), print a short studio status at session start and ask a studio subagent
 for its missing handoff once; outside a Unity project they exit at once. `python` must be the Python 3 command (macOS/Linux: `python-is-python3` or an alias).
@@ -21,7 +21,7 @@ subagents, no hooks (no Haiku scribe; the main agent runs map/rule checks). Eval
 ## What you get
 - `.studio/` state: brief, gdd, board, handoffs, devlogs, art bible, VFX specs, `PROJECT_MAP.md` (regex map, no LLM).
 - Commands (plugin install): `/unity-2d-studio:status`, `/unity-2d-studio:review [ID]`, `/unity-2d-studio:end-of-day`.
-- Scripts: `project_map.py`, `check_code.py`, `scene_check.py`, `hooks.py`, `status.py`, `install_unity.py`, `asmdefs.py`, `placeholder_sprites.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
+- Scripts: `project_map.py`, `check_code.py`, `compile_check.py` (dotnet build of Unity's .csproj / Editor.log errors), `scene_check.py`, `hooks.py`, `status.py`, `install_unity.py`, `asmdefs.py`, `placeholder_sprites.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
   `palette.py` (palette table, contrast + colour-blind board), `vfx_spec.py` (palette-role VFX specs), `logo_sheet.py` (logo tests).
 - Unity 6 + URP 17 tested: StudioSetup, SpriteImportRules, VfxBuilder, StudioEditorUtil, StudioConsoleBridge (errors → `.studio/`).
 - Not a Unity project (no `Assets/` + `ProjectSettings/ProjectVersion.txt`, e.g. Godot)? The skill steps aside.

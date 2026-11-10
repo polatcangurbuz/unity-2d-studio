@@ -136,14 +136,34 @@ namespace Studio.EditorTools
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (existing != null) return existing;
 
-            var shader = Shader.Find(blend == "additive" ? "Legacy Shaders/Particles/Additive" : "Legacy Shaders/Particles/Alpha Blended")
-                         ?? Shader.Find("Sprites/Default");
-            var material = new Material(shader)
-            {
-                mainTexture = texture == "soft" ? AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd") : PixelTexture(),
-            };
+            var material = UrpParticleMaterial(blend == "additive") ?? LegacyParticleMaterial(blend == "additive");
+            material.mainTexture = texture == "soft" ? AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd") : PixelTexture();
             AssetDatabase.CreateAsset(material, path);
             return material;
+        }
+
+        // Legacy particle shaders render nothing under URP; its Particles/Unlit needs the transparent setup done by hand.
+        private static Material UrpParticleMaterial(bool additive)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null) return null;
+            var m = new Material(shader);
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", additive ? 2f : 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)(additive ? UnityEngine.Rendering.BlendMode.One : UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            m.SetFloat("_ZWrite", 0f);
+            m.SetOverrideTag("RenderType", "Transparent");
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            return m;
+        }
+
+        private static Material LegacyParticleMaterial(bool additive)
+        {
+            var shader = Shader.Find(additive ? "Legacy Shaders/Particles/Additive" : "Legacy Shaders/Particles/Alpha Blended");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            return new Material(shader);
         }
 
         // Hard-edged square particles match pixel art; the built-in soft particle would blur the style.

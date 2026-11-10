@@ -4,14 +4,16 @@
 State is kept per agent (`agent_id` from the hook input, "main" for the producer), so parallel subagents never see or
 clear each other's files.
 
-session-start:  SessionStart. Studio project → prints status.py (open board rows, console/test state) into context.
+session-start:  SessionStart. Studio project → refreshes the map, prints status.py (board, compile, console, scenes saved
+                since the last stop) into context and moves the scene stamp.
 subagent-start: SubagentStart. Stamps the start time (scene check + handoff check measure from it).
 post-edit:      PostToolUse on Edit/Write. A .cs file: remember it for this agent's stop check and refresh
                 .studio/PROJECT_MAP.md only if the public signature hash changed. Prints nothing.
                 A .studio note (.md): devlog.py --check-refs marks bad file:line refs "(UNVERIFIED …)" in place and tells Claude.
 stop:           Stop / SubagentStop. check_code.py on this agent's remembered files, scene_check.py on .unity/.prefab
-                files under Assets/_Project saved since this agent's previous stop (or start). A studio subagent that wrote
-                no handoff is asked for one, once. Clean → silent exit 0. Violations → stderr, exit 2 (Claude keeps working).
+                files under Assets/_Project saved since this agent's previous stop (or start), compile_check.py (dotnet build
+                of the changed files' assemblies). A studio subagent that wrote no handoff, or one without the
+                `# <ID> <title> · <agent> · <date>` header, is asked once. Clean → silent exit 0. Violations → stderr, exit 2 (Claude keeps working).
 Any unexpected error → appended to .studio/hook-errors.log, exit 0: a broken hook must never block the session.
 """
 import glob
@@ -28,6 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = ".studio"
 # Studio subagents that must leave a handoff (scribe writes devlogs instead).
 HANDOFF_AGENTS = {"architect", "gameplay-coder", "art-director", "vfx-artist", "qa-reviewer"}
+HEADER_RE = re.compile(r"^# [A-Z]+-\d+ .+ · [a-z][a-z0-9-]* · \d{4}-\d{2}-\d{2}")
 
 
 def find_root(path):
@@ -68,7 +71,10 @@ def session_start(event):
     root = find_root(event.get("cwd") or os.getcwd())
     if not root or not os.path.exists(os.path.join(root, STATE, "brief.md")):
         return 0
+    # The user clicks builders and plays between sessions: refresh the map and report what Unity saved meanwhile.
+    run("project_map.py", root, "--if-changed")
     out = run("status.py", root).stdout.strip()
+    write(state(root, "scene_stamp", "main"))  # status.py just reported those scenes; the next Stop starts from here
     if out:
         print(out)
     return 0
@@ -112,19 +118,26 @@ def code_report(root, key):
     if not os.path.exists(pending):
         return ""
     files = [f for f in read(pending).split() if os.path.exists(os.path.join(root, f))]
-    result = run("check_code.py", root, "--files", *files) if files else None
+    rules = run("check_code.py", root, "--files", *files) if files else None
+    build = run("compile_check.py", root, "--files", *files) if files else None
+    parts = []
+    if rules and rules.returncode:
+        parts.append("check_code.py found rule violations in files you changed; fix them:\n" + rules.stdout.strip())
+    if build and build.returncode:
+        parts.append("compile_check.py (dotnet build of Unity's .csproj) found compile errors; fix them before telling the user to switch to Unity:\n"
+                     + build.stdout.strip())
     last = pending + ".last"
-    if not result or result.returncode == 0:
+    if not parts:
         for p in (pending, last):
             if os.path.exists(p):
                 os.remove(p)
         return ""
-    report = result.stdout.strip()
+    report = "\n".join(parts)
     # Report already shown and unchanged (ignored or unfixable) → stay silent instead of repeating it every turn.
     if os.path.exists(last) and read(last) == report:
         return ""
     write(last, report)
-    return "check_code.py found rule violations in files you changed; fix them:\n" + report
+    return report
 
 
 def scene_report(root, key):
@@ -139,6 +152,8 @@ def scene_report(root, key):
     base = os.path.join(root, "Assets", "_Project")
     changed = [os.path.relpath(p, root) for ext in ("unity", "prefab")
                for p in glob.glob(os.path.join(base, "**", "*." + ext), recursive=True) if os.path.getmtime(p) > since]
+    if changed:
+        run("project_map.py", root, "--if-changed")  # scenes are in the map; Unity, not an edit, created them
     result = run("scene_check.py", root, "--files", *changed) if changed else None
     if not result or result.returncode == 0:
         return ""
@@ -152,11 +167,18 @@ def handoff_report(root, key, event):
     if not os.path.exists(start) or os.path.exists(asked):
         return ""
     since = os.path.getmtime(start)
-    if any(os.path.getmtime(p) >= since for p in glob.glob(os.path.join(root, STATE, "handoff", "*.md"))):
+    touched = [p for p in glob.glob(os.path.join(root, STATE, "handoff", "*.md")) if os.path.getmtime(p) >= since]
+    agent = (event.get("agent_type") or "").split(":")[-1]
+    # qa-reviewer appends to the author's handoff; the header is the author's to fix.
+    bad = [os.path.basename(p) for p in touched if agent != "qa-reviewer" and not HEADER_RE.match(read(p))]
+    if touched and not bad:
         return ""
     write(asked)
+    if bad:
+        return (f"handoff header missing in {', '.join(bad)}: first line must be `# <ID> <title> · {agent} · YYYY-MM-DD` "
+                "(devlog.py and end of day read the agent and date from it). Fix it, then reply.")
     return ("no .studio/handoff/<taskID>.md written or updated in this task: the producer reads only the handoff. "
-            "Write it (≤20 lines: goal | files | api | events | tests | open | next), then reply.")
+            f"Write it (≤20 lines; first line `# <ID> <title> · {agent} · YYYY-MM-DD`, then goal | files | api | events | tests | open | next), then reply.")
 
 
 def cleanup(root, key):

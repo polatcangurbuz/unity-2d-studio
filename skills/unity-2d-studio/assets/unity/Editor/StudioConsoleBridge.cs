@@ -18,9 +18,11 @@ namespace Studio.EditorTools
     {
         private const int MaxEntries = 200;
         private const string SessionKey = "Studio.ConsoleBridge.Started";
+        private const string CompileKey = "Studio.ConsoleBridge.Compile";
         private static readonly string Folder = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? ".", ".studio");
         private static readonly string LogPath = Path.Combine(Folder, "console.log");
         private static readonly Regex CompilerLine = new Regex(@"\): (error|warning) CS\d+:");
+        private static readonly Regex TimePrefix = new Regex(@"^\[\d\d:\d\d:\d\d\] ");
         private static readonly Regex StackFrame = new Regex(@"\(at (Assets/[^)]+:\d+)\)");
         private static readonly List<string> Entries = new List<string>();
         private static int _compileErrors;
@@ -32,13 +34,16 @@ namespace Studio.EditorTools
             SessionState.SetBool(SessionKey, true);
             // A domain load means scripts compiled, so earlier compile errors are stale.
             var previous = !fresh && File.Exists(LogPath) ? File.ReadAllLines(LogPath).Skip(1).ToList() : new List<string>();
-            Entries.AddRange(previous.Where(l => !l.StartsWith("compile-error")).TakeLast(MaxEntries));
+            Entries.AddRange(previous.Where(l => !Body(l).StartsWith("compile-error")).TakeLast(MaxEntries));
+            // This class only loads after a successful compile (Unity keeps the old domain on errors).
+            SessionState.SetString(CompileKey, "compile ok");
             if (fresh) Flush("session start");
             else if (Entries.Count != previous.Count) Flush("compile ok");
             CompilationPipeline.compilationStarted += OnCompilationStarted;
             CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompiled;
             CompilationPipeline.compilationFinished += OnCompilationFinished;
             Application.logMessageReceived += OnLog;
+            EditorApplication.playModeStateChanged += OnPlayMode;
 #if STUDIO_TEST_RUNNER
             ScriptableObject.CreateInstance<TestRunnerApi>().RegisterCallbacks(new StudioTestReporter());
 #endif
@@ -57,12 +62,15 @@ namespace Studio.EditorTools
             {
                 _compileErrors++;
                 var text = !string.IsNullOrEmpty(m.file) && m.message.StartsWith(m.file) ? m.message : $"{m.file}:{m.line} {m.message}";
-                Add($"compile-error {FirstLine(text)}");
+                Add($"{(IsPackage(m.file) ? "package-" : string.Empty)}compile-error {FirstLine(text)}");
             }
         }
 
-        private static void OnCompilationFinished(object context) =>
-            Flush(_compileErrors == 0 ? "compile ok" : $"compile failed: {_compileErrors} error(s)");
+        private static void OnCompilationFinished(object context)
+        {
+            SessionState.SetString(CompileKey, _compileErrors == 0 ? "compile ok" : $"compile failed: {_compileErrors} error(s)");
+            Flush(SessionState.GetString(CompileKey, string.Empty));
+        }
 
         private static void OnLog(string message, string stackTrace, LogType type)
         {
@@ -71,27 +79,53 @@ namespace Studio.EditorTools
             // First frame outside the Studio helpers points at the caller, e.g. the builder line that passed a bad field name.
             var at = StackFrame.Matches(stackTrace ?? string.Empty).Cast<Match>().FirstOrDefault(m => !m.Value.Contains("/Studio"));
             var mode = EditorApplication.isPlaying ? "play" : "edit";
-            Add($"{type.ToString().ToLowerInvariant()} [{mode}] {(at != null ? at.Groups[1].Value + " " : string.Empty)}{FirstLine(message)}");
+            // Errors raised by Unity packages (not our code) stay visible but are counted apart.
+            var package = at == null && IsPackage(message) ? "package-" : string.Empty;
+            Add($"{package}{type.ToString().ToLowerInvariant()} [{mode}] {(at != null ? at.Groups[1].Value + " " : string.Empty)}{FirstLine(message)}");
             Flush(null);
         }
 
+        // Each Play replaces the previous Play's errors, so readers never mistake an old run for the current one.
+        private static void OnPlayMode(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.EnteredPlayMode) return;
+            Entries.RemoveAll(e => Body(e).Contains(" [play] ") || Body(e).StartsWith("play start"));
+            Add("play start");
+            Flush("play");
+        }
+
+        // Builders call this (StudioEditorUtil.BuildScene does) so the log shows which build the following errors belong to.
+        public static void Mark(string what)
+        {
+            Add($"mark {what}");
+            Flush(null);
+        }
+
+        private static bool IsPackage(string text) =>
+            !string.IsNullOrEmpty(text) && (text.Contains("Packages/") || text.Contains("PackageCache")) && !text.Contains("Assets/");
+
         private static void Add(string entry)
         {
-            // Errors in Update repeat every frame; one line with a count is enough.
+            // Errors in Update repeat every frame; one line with a count (and the first time) is enough.
             var last = Entries.Count - 1;
-            var repeat = Regex.Match(last >= 0 ? Entries[last] : string.Empty, @"^(.*) \(x(\d+)\)$");
-            if (last >= 0 && (Entries[last] == entry || repeat.Success && repeat.Groups[1].Value == entry))
-                Entries[last] = $"{entry} (x{(repeat.Success ? int.Parse(repeat.Groups[2].Value) + 1 : 2)})";
-            else Entries.Add(entry);
+            var repeat = Regex.Match(last >= 0 ? Entries[last] : string.Empty, @"^(\[[\d:]+\] )?(.*?)(?: \(x(\d+)\))?$");
+            if (last >= 0 && repeat.Groups[2].Value == entry)
+                Entries[last] = $"{repeat.Groups[1].Value}{entry} (x{(repeat.Groups[3].Success ? int.Parse(repeat.Groups[3].Value) + 1 : 2)})";
+            else Entries.Add($"[{DateTime.Now:HH:mm:ss}] {entry}");
             if (Entries.Count > MaxEntries) Entries.RemoveRange(0, Entries.Count - MaxEntries);
         }
+
+        private static string Body(string line) => TimePrefix.Replace(line, string.Empty);
 
         private static void Flush(string status)
         {
             try
             {
                 Directory.CreateDirectory(Folder);
-                var header = $"# {DateTime.Now:HH:mm:ss} {status ?? "log"} · {Entries.Count} entr{(Entries.Count == 1 ? "y" : "ies")}";
+                // The header always carries the last compile result, so a play/log flush does not hide it.
+                var compile = SessionState.GetString(CompileKey, "compile ?");
+                var what = status != null && status.StartsWith("compil") ? status : $"{status ?? "log"} · {compile}";
+                var header = $"# {DateTime.Now:HH:mm:ss} {what} · {Entries.Count} entr{(Entries.Count == 1 ? "y" : "ies")}";
                 File.WriteAllLines(LogPath, new[] { header }.Concat(Entries));
             }
             catch (IOException)

@@ -19,6 +19,9 @@ Review only the files the handoff lists, plus their direct callers if the public
 
 Evidence
 - Compile + Console: Unity MCP bridge if present, else `.studio/console.log` (header `compile ok`, no `error`/`exception` lines).
+  Lines are `[HH:mm:ss]`-stamped; only lines after the last `play start` are the current Play; `package-…` = Unity package, not
+  the task. A play error older than the last `mark build` or a later fix → stale: `unverified`, not `fail`.
+  No console.log yet → `python ${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/compile_check.py --editor-log` (Unity's own log).
 - Tests: MCP test run, else `.studio/test-results.txt` (`failed 0`). Never ask the user to paste logs.
 - Either file older than the handoff's last code change, or missing → not verified: say so (producer asks the user to switch
   to Unity / run Test Runner), don't pass.

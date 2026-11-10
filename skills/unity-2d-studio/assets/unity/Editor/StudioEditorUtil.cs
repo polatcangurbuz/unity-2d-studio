@@ -26,6 +26,9 @@ namespace Studio.EditorTools
                     continue;
                 }
 
+                // A destroyed Object (asset unloaded by NewScene) or a failed load would silently save an empty ref.
+                if (p.propertyType == SerializedPropertyType.ObjectReference && (value == null || value is Object o && o == null))
+                    Debug.LogError($"[Wire] {target.GetType().Name}.{field}: value is {(value == null ? "null (load failed?)" : "a destroyed asset (loaded before NewScene? use StudioEditorUtil.BuildScene)")}", target);
                 if (!Assign(p, value)) Debug.LogError($"[Wire] {target.GetType().Name}.{field}: can't assign {value?.GetType().Name ?? "null"} to {p.propertyType}", target);
             }
 
@@ -168,6 +171,17 @@ namespace Studio.EditorTools
             if (File.Exists(path)) return EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
             EnsureFolder(Path.GetDirectoryName(path)?.Replace('\\', '/'));
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            EditorSceneManager.SaveScene(scene, path);
+            return scene;
+        }
+
+        // Fresh scene → build → save, in the only safe order: load or create assets inside build, never before the call.
+        public static Scene BuildScene(string path, System.Action<Scene> build)
+        {
+            EnsureFolder(Path.GetDirectoryName(path)?.Replace('\\', '/'));
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            StudioConsoleBridge.Mark($"build {path}");
+            build(scene);
             EditorSceneManager.SaveScene(scene, path);
             return scene;
         }

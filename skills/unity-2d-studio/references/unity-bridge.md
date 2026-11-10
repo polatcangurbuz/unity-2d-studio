@@ -18,17 +18,22 @@ Once per session: ToolSearch "unity" / "scene" / "console" (names vary; don't ha
 - Write C# directly (compiles on Unity focus).
 - Click-work the user can do in ≤5 steps (create SO via Create menu, assign fields) → give the step list. No menu script.
 - Repetitive/structural editor work → idempotent `[MenuItem("Tools/Studio/<Action>")]` script in `Assets/_Project/Code/Editor/` + ask for one click.
-  Builders use `StudioEditorUtil` first: `Wire(obj, ("_field", value)…)` (private [SerializeField], Object[]/enum/int/float/bool/Vector2/3/Color/string),
+  Builders: `using Studio.EditorTools;` (namespace of all Studio Editor tools), then `StudioEditorUtil` first:
+  `BuildScene(path, scene => { …create/load assets and objects here… })` (new scene → build → save, safe order), `Wire(obj, ("_field", value)…)` (private [SerializeField], Object[]/enum/int/float/bool/Vector2/3/Color/string; null/destroyed value → LogError),
   `LoadOrCreate<T>`, `EnsureFolder`, `EnsureLayer`, `AddToBuildSettings`, `Separator`, `NewActor(name, sprite, order, layer, out visual)`,
   `SavePrefab`, `OpenOrCreateScene`, `BakeTilemapColliders(tilemap, composite = true)`. Placeholder art: `placeholder_sprites.py`, not pixel grids in C#.
-- Console: `StudioConsoleBridge` writes compile errors + Error/Exception logs (play mode too) to `.studio/console.log` (reset each compile)
-  and Test Runner summaries to `.studio/test-results.txt`. After code changes tell the user "switch to Unity" (it compiles on focus),
+- Console: `StudioConsoleBridge` writes compile errors + Error/Exception logs (play mode too) to `.studio/console.log`, each line
+  `[HH:mm:ss]`-stamped; reset each compile; each Play replaces the previous Play's lines (`play start`); `mark build <scene>` from
+  `BuildScene`; `package-…` lines come from Unity packages, not project code. Test Runner summaries → `.studio/test-results.txt`.
+  The bridge only runs once it compiled cleanly: before that, `compile_check.py --editor-log` reads Unity's own Editor.log, and the
+  Stop hook's `compile_check.py` (dotnet build of Unity's `.csproj`) catches compile errors before the user switches to Unity. After code changes tell the user "switch to Unity" (it compiles on focus),
   then read those files. Never ask the user to paste logs. Tests: user runs Test Runner → EditMode → Run All, or batch:
   `"<Unity.exe>" -batchmode -projectPath . -runTests -testPlatform EditMode -testResults .studio/test-results.xml -quit`
   then grep `result="Failed"`.
 
 ## Builder gotchas
-- `EditorSceneManager.NewScene(…, Single)` unloads unreferenced assets: SOs created before it turn null. Open/create the scene FIRST (`OpenOrCreateScene`).
+- `EditorSceneManager.NewScene(…, Single)` unloads unreferenced assets: SOs/prefabs loaded before it wire as null (spawner without prefab,
+  events that never fire). Use `BuildScene` (or `OpenOrCreateScene`) and load assets inside it.
 - `CompositeCollider2D` auto-adds a dynamic `Rigidbody2D`: add the Rigidbody2D first, set `bodyType = Static`, then the composite.
 - Tilemap colliders: `SetTile` all tiles, then `BakeTilemapColliders` (body, colliders, ProcessTilemapChanges, GenerateGeometry) before `SaveScene`;
   colliders added before tiles otherwise save an empty composite (player falls through).

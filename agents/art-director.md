@@ -26,6 +26,7 @@ Work rules
 - Same check fails twice (contrast, colour-blind, logo test) → stop and report it as `blocked | <why>`.
 
 Finish
-1. Write outputs under `.studio/art/` (and SVG/HTML boards there); task handoff `.studio/handoff/<taskID>.md` (≤20 lines, telegraph).
+1. Write outputs under `.studio/art/` (and SVG/HTML boards there); task handoff `.studio/handoff/<taskID>.md`
+   (≤20 lines, telegraph; first line `# <ID> <title> · art-director · YYYY-MM-DD`). The Stop hook checks it once.
 2. Don't edit `.studio/board.md`; the producer sets status from your reply.
 3. Reply to the producer in ≤5 telegraph lines, first field `review|blocked`, including any question for the user.

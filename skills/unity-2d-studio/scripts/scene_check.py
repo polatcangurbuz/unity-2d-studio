@@ -51,8 +51,13 @@ def check(path, rel, own_scripts):
             script = (SCRIPT_RE.search(body) or [None, ""])[1]
             lights = lights or script == LIGHT2D_GUID
             unset = UNSET_RE.findall(body) if script in own_scripts else []
-            if unset:
-                issues.append(f"{owner(body)}: unassigned refs {', '.join(unset)} (intentionally optional? ignore)")
+            if len(unset) >= 2:
+                # Several refs empty at once is a builder bug, not an optional field: usually assets loaded before
+                # NewScene(Single) unloaded them, or a LoadAssetAtPath path is wrong.
+                issues.append(f"{owner(body)}: unassigned refs {', '.join(unset)} - wiring bug (assets loaded before NewScene? "
+                              "use StudioEditorUtil.BuildScene; check the [Wire] errors in console.log)")
+            elif unset:
+                issues.append(f"{owner(body)}: unassigned ref {unset[0]} (optional by design? else wire it)")
         elif kind in ("SpriteRenderer", "TilemapRenderer") and SPRITE_LIT_GUID in body:
             lit = True
     if rel.endswith(".unity") and lit and not lights:

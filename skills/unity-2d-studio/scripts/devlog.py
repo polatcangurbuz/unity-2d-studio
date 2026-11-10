@@ -44,8 +44,12 @@ def missing_files(root, files_field):
         if not spec or " " in spec or not re.search(r"\.\w+(\}|$)", spec):
             continue
         for path in expand(spec):
-            if not any(os.path.exists(os.path.join(root, base, path)) for base in ("", "Assets/_Project", "Assets")):
-                missing.append(path)
+            if any(os.path.exists(os.path.join(root, base, path)) for base in ("", "Assets/_Project", "Assets")):
+                continue
+            # "Dir/A.cs · B.cs": a bare name usually shares the previous item's folder; find it by name.
+            if "/" not in path and resolve(root, path):
+                continue
+            missing.append(path)
     return missing
 
 
@@ -107,6 +111,18 @@ def check_refs(root, paths):
     return found
 
 
+def board_owners(root):
+    path = os.path.join(root, ".studio", "board.md")
+    if not os.path.exists(path):
+        return {}
+    owners = {}
+    for line in open(path, encoding="utf-8").read().splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 3 and re.match(r"^[A-Z]+-\d+$", cells[0]):
+            owners[cells[0]] = cells[2]
+    return owners
+
+
 def handoff_logs(root, date):
     """agent -> pre-filled log text, from handoffs whose header (or mtime) is that day."""
     by_agent = {}
@@ -116,8 +132,15 @@ def handoff_logs(root, date):
         stamp = re.search(r"\d{4}-\d{2}-\d{2}", head)
         day = stamp.group(0) if stamp else datetime.date.fromtimestamp(os.path.getmtime(path)).isoformat()
         parts = [p.strip() for p in head.lstrip("# ").split("·")]
-        if day != date or len(parts) < 2:
+        if day != date:
             continue
+        if len(parts) < 2:
+            # Header without "· agent ·": take the task from the file name and the agent from the board's owner column.
+            task_id = os.path.basename(path)[:-3]
+            owner = board_owners(root).get(task_id)
+            if not owner:
+                continue
+            parts = [task_id, owner]
         task, agent = parts[0], re.sub(r"[^a-z0-9-]", "", parts[1].lower())
         field = {m.group(1): m.group(2).strip() for m in (re.match(r"^(goal|next|open|files|api):\s*(.*)$", l) for l in lines) if m}
         entry = by_agent.setdefault(agent or "agent", {"done": [], "next": [], "risks": []})

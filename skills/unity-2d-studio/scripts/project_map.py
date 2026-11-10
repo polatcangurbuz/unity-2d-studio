@@ -342,9 +342,10 @@ def main():
     debt_total = sum(f["debt"] for f in files)
     out = args.out or os.path.join(root, ".studio", "PROJECT_MAP.md")
     # Inspector fields are in the hash too: a map listing stale [SerializeField]s would mislead.
+    scenes = collect_scenes(assets, root, args.all)
     sig = hashlib.sha1(json.dumps(
         [[f["path"], f["ns"], [[t["kind"], t["name"], t["bases"], t["pub"], t["ser"]] for t in f["types"]]] for f in files]
-        + [asmdefs], sort_keys=True).encode()).hexdigest()[:12]
+        + [asmdefs, scenes], sort_keys=True).encode()).hexdigest()[:12]
     if args.if_changed and os.path.exists(out) and f"sig {sig}" in read(out, 600):
         return
     header = [
@@ -355,7 +356,6 @@ def main():
     ]
     if asmdefs:
         header += ["\n## Assemblies"] + asmdefs
-    scenes = collect_scenes(assets, root, args.all)
     if scenes:
         header += ["\n## Scenes"] + [f"- {s}" for s in capped(scenes)]
     so = collect_so_assets(assets, root, args.all, script_by_guid)

@@ -17,6 +17,7 @@ import sys
 sys.dont_write_bytecode = True  # plugin dir may be a read-only cache: no __pycache__ there
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from palette import read_palette  # noqa: E402
+from placeholder_sprites import FALLBACK  # noqa: E402
 
 LAYER_KEYS = {
     "name": str, "shape": str, "radius": float, "angle": float, "burst": int, "rate": float, "lifetime": str, "speed": str,
@@ -128,10 +129,16 @@ def to_json(spec, palette, path):
             "order": int(spec.get("order", 10)), "layers": layers}
 
 
-def cmd_new(args):
-    palette = read_palette(args.root)
+def studio_palette(root):
+    # A full-scope kickoff has no art bible yet: use the placeholder roles instead of blocking the VFX task.
+    palette = read_palette(root)
     if not palette:
-        sys.exit("no palette in .studio/art/art-bible.md; run palette.py set first")
+        print("no palette in .studio/art/art-bible.md: using placeholder roles (default, unconfirmed; palette.py set to replace)")
+    return palette or dict(FALLBACK)
+
+
+def cmd_new(args):
+    palette = studio_palette(args.root)
     roles = (args.colors or "").split(",") if args.colors else [r for r in ("hazard", "reward") if r in palette] or list(palette)[-2:]
     a, b = roles[0], roles[1] if len(roles) > 1 else roles[0]
     layers = []
@@ -154,7 +161,7 @@ def cmd_new(args):
 
 
 def cmd_build(args):
-    palette = read_palette(args.root)
+    palette = studio_palette(args.root)
     folder = os.path.join(args.root, ".studio", "vfx")
     names = args.names or ([f[:-5] for f in sorted(os.listdir(folder)) if f.endswith(".yaml")] if os.path.isdir(folder) else [])
     if not names:

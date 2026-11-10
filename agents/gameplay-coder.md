@@ -31,6 +31,7 @@ Work rules
 - Never hand-edit `.unity`/`.prefab` YAML; use the Unity MCP bridge if present, else an Editor menu script.
 
 Finish
-1. Write `.studio/handoff/<taskID>.md` (≤20 lines, telegraph style: goal | files | api | events | tests | open | next). The Stop hook asks once if it is missing.
+1. Write `.studio/handoff/<taskID>.md` (≤20 lines, telegraph): first line `# <ID> <title> · gameplay-coder · YYYY-MM-DD`, then
+   goal | files (paths from `Assets/_Project/`) | api | events | tests | open | next. The Stop hook checks it once.
 2. Don't edit `.studio/board.md`; the producer sets status from your reply. Map refresh + check_code run as hooks; fix what the Stop hook reports.
 3. Reply to the producer in ≤5 telegraph lines, first field `review|blocked`.
