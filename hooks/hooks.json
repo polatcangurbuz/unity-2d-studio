@@ -1,24 +1,39 @@
 {
+  "description": "unity-2d-studio: status at session start, project map + rule checks after edits, handoff check for studio subagents",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" session-start", "timeout": 30 }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" subagent-start", "timeout": 30 }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" post-edit" }
+          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" post-edit", "timeout": 60 }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" stop" }
+          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" stop", "timeout": 120 }
         ]
       }
     ],
     "SubagentStop": [
       {
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" stop" }
+          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/hooks.py\" stop", "timeout": 120 }
         ]
       }
     ]

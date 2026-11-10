@@ -11,6 +11,27 @@ From a session where a builder saved an empty tilemap composite and the error wa
 - Verified in Unity 6000.0.58f2 batch: colliders-before-tiles without bake → `m_Paths: []` (flagged), same order + bake → 6 paths;
   tilemap with no tiles → 2 lines in `console.log`; scene_check found all 3 issue types; hook reports once, silent next Stop.
 
+From an audit of the multi-agent setup against current Claude Code docs and other subagent systems (Anthropic harness/
+code-review posts and plugins, Claude-Code-Game-Studios, ccpm, ralph-loop).
+- Fix: hook state is per agent (`agent_id`). Before, parallel subagents shared `.studio/.pending_check`: the first to stop got
+  the other's (and the producer's) violations and cleared them, so the real author never saw them. Scene check per agent too.
+- Fix: hook output forced to UTF-8 (Windows codepage garbled `·`/`≤`); any hook exception → `.studio/hook-errors.log`, exit 0.
+- Fix: qa-reviewer read Console via the user; now `.studio/console.log` / `test-results.txt` (or MCP), stale or missing = `unverified`.
+- Only the producer writes `board.md` (parallel agents editing it collided); agents return status as the reply's first field.
+- qa-reviewer is an independent checker: never edits code (`disallowedTools: Agent, Write, NotebookEdit`), evidence over the
+  handoff's claims, only real defects with `file:line`, verdict `pass|fail|unverified`.
+- All agents: `disallowedTools: Agent` (no nested spawns), `maxTurns`, `color`; edit only the prompt's `scope:`; same fix fails
+  twice → `blocked | <why>`. Producer: `scope:` in every delegation, parallel only with disjoint scopes, no worktrees (Library
+  re-import), partial result → SendMessage, not respawn. architect gets the handoff template inline and plans at deliverable level.
+- `scripts/status.py` (no LLM): open board rows, console/test state, UNVERIFIED handoffs, hook errors. SessionStart hook prints it,
+  so the producer no longer reads `board.md` at session start.
+- SubagentStart/SubagentStop: a studio subagent (not scribe) that wrote no handoff is asked for one, once.
+- Commands (plugin install): `/unity-2d-studio:status`, `/unity-2d-studio:review [ID]`, `/unity-2d-studio:end-of-day [date]`.
+- `tests/test_scripts.py` (stdlib unittest: check_code, scene_check, hooks incl. the parallel race, status, project_map, plugin
+  files) + GitHub Actions (Ubuntu/Windows, Python 3.8/3.12, `claude plugin validate --strict`).
+- Not adopted, on purpose: more agents, Agent Teams, worktrees, a separate `features.json` (board acceptance covers it).
+- Not re-measured yet: e1-e9 evals with these changes.
+
 ## v1.1.0 · 2026-10-30
 From a real no-MCP session (Unity 6000.0.58, URP 17 2D, Windows): fewer error turns, less hand-written code.
 - Asmdefs get package references from `Packages/manifest.json`: Input System (Gameplay, UI), uGUI + TMP (UI, Editor),

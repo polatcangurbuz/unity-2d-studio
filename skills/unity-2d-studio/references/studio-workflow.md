@@ -63,10 +63,13 @@ Agent Teams are not used. Parallel work → several subagent calls in the same m
 | T-007 | double jump | gameplay-coder | review | 2nd jump in air only; resets on ground; test passes |
 ```
 `todo` → `doing` → `review` → `done` | `blocked: <reason>`. Acceptance = one testable line, else not assignable.
-Producer owns rows; agents change only their own status. Keep open + last 10 done; older → `board-archive.md`.
+Only the producer writes `board.md` (parallel agents editing one file collide); agents report status as the first field of
+their reply (`review|blocked`, qa: `pass|fail|unverified`). Keep open + last 10 done; older → `board-archive.md`.
 
 ## Delegating
-`task: T-007 | goal | acceptance | read: .studio/PROJECT_MAP.md, .studio/handoff/T-005.md`. No pasted code.
+`task: T-007 | goal | acceptance | scope: Code/Gameplay/Player/ | read: .studio/PROJECT_MAP.md, .studio/handoff/T-005.md`. No pasted code.
+Parallel only with disjoint scopes (no shared scene, prefab or SO asset); no git worktrees (Unity re-imports Library per copy).
+Agents stop after the same fix fails twice and reply `blocked | <why>` → board `blocked: <why>`, ask the user.
 
 ## Handoff
 On task finish write `.studio/handoff/<ID>.md`, ≤20 lines, telegraph:
@@ -81,7 +84,7 @@ open: coyote time not handled
 next: qa-reviewer → review T-007
 ```
 Follow-up on same task (fix/extend) → update the same handoff, keep ≤20 lines.
-Then board status → stop (hooks refresh the map and run check_code). Next agent reads handoff + map first, source only if it must.
+Then reply with status → stop (hooks refresh the map and run check_code; a studio subagent without a handoff is asked once). Next agent reads handoff + map first, source only if it must.
 
 ## Devlog
 - Agent at session end / `/devlog`: `python <skill>/scripts/devlog.py <agent>` → fill done/decisions/next/risks, ≤12 lines.

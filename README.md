@@ -9,7 +9,9 @@ reading only the reference section it needs; subagents for end of day (scribe, H
 /plugin install unity-2d-studio@unity-2d-studio
 ```
 Needs `python` 3.8+ on PATH. Hooks refresh `.studio/PROJECT_MAP.md` after signature changes, mark missing `file:line` refs in
-`.studio` notes `(UNVERIFIED …)` and run `check_code.py` on changed `.cs` files and `scene_check.py` on scenes Unity saved at Stop; outside a Unity project they exit at once.
+`.studio` notes `(UNVERIFIED …)`, run `check_code.py` on changed `.cs` files and `scene_check.py` on scenes Unity saved at Stop
+(per agent, so parallel subagents don't mix reports), print a short studio status at session start and ask a studio subagent
+for its missing handoff once; outside a Unity project they exit at once. `python` must be the Python 3 command (macOS/Linux: `python-is-python3` or an alias).
 In a Unity project say "start a new 2D game": one batch of questions, Editor tools copied to `Assets/_Project/Code/Editor/`
 (never overwrites), then you click **Tools > Studio > Setup Project** (folders, asmdefs, Bootstrap scene, git files).
 
@@ -18,7 +20,8 @@ subagents, no hooks (no Haiku scribe; the main agent runs map/rule checks). Eval
 
 ## What you get
 - `.studio/` state: brief, gdd, board, handoffs, devlogs, art bible, VFX specs, `PROJECT_MAP.md` (regex map, no LLM).
-- Scripts: `project_map.py`, `check_code.py`, `scene_check.py`, `hooks.py`, `install_unity.py`, `asmdefs.py`, `placeholder_sprites.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
+- Commands (plugin install): `/unity-2d-studio:status`, `/unity-2d-studio:review [ID]`, `/unity-2d-studio:end-of-day`.
+- Scripts: `project_map.py`, `check_code.py`, `scene_check.py`, `hooks.py`, `status.py`, `install_unity.py`, `asmdefs.py`, `placeholder_sprites.py`, `devlog.py` (end of day, pre-filled from handoffs and checked against disk),
   `palette.py` (palette table, contrast + colour-blind board), `vfx_spec.py` (palette-role VFX specs), `logo_sheet.py` (logo tests).
 - Unity 6 + URP 17 tested: StudioSetup, SpriteImportRules, VfxBuilder, StudioEditorUtil, StudioConsoleBridge (errors → `.studio/`).
 - Not a Unity project (no `Assets/` + `ProjectSettings/ProjectVersion.txt`, e.g. Godot)? The skill steps aside.
@@ -36,5 +39,7 @@ read 2026-10-30; 1h cache writes counted). e6/e7: v1.0.0 config with subagents i
 n=1-3 runs each. e4 does one-time work (model notes, art bible, colour-blind board) that e8 reuses. Cost per passed check is
 lower on 8 of 9; pass rate 97-98% vs 51-64%. A delegated code task cost 13% more, so code isn't delegated by default (CHANGELOG).
 Plugin re-runs, 1 each: v1.0.0 e2 $0.52, e6 $0.33 (scribe on Haiku); v1.1.0 vs v1.0.0: e1 -13%, e2 +5%, e7 -23%, same checks pass.
+
+Tests: `python -m unittest discover -s tests` (stdlib only; CI runs them on Ubuntu + Windows and `claude plugin validate --strict`).
 
 Credits and licences: [CREDITS.md](CREDITS.md). License: [MIT](LICENSE). Changes: [CHANGELOG.md](CHANGELOG.md).

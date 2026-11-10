@@ -44,11 +44,12 @@ Empty folder + new-game request → Kickoff. Anything else (`project.godot`, Pha
     `GameObject.Find`/`Find*WithTag`/`transform.Find("…")` · `GetComponent*` in Update/FixedUpdate/LateUpdate · public fields
     (const, static readonly, events, properties OK) · files outside `Assets/_Project/` (ThirdParty/Plugins/StreamingAssets and URP's root assets OK).
     Big editor builders: split from the start into Layout / Art / UI / Util files.
-16. User: their language, short. All questions in one batch with defaults.
+16. User: their language, short. All questions in one batch with defaults. Same fix fails twice → stop, board `blocked: <why>`, tell the user.
 17. Create `.cs`/`.md` files with the Write tool, one per call; shell heredocs only for short single-file jobs (Git Bash breaks multi-file heredocs).
 
 ## Session start
-No `.studio/brief.md` → Kickoff (`studio-workflow.md § Kickoff`). Else read `.studio/board.md` + `.studio/PROJECT_MAP.md`.
+No `.studio/brief.md` → Kickoff (`studio-workflow.md § Kickoff`). Else read `.studio/PROJECT_MAP.md`; the SessionStart hook already
+printed `studio status` (open board rows, console/test state) → don't read `board.md` unless you edit it (no hooks → `scripts/status.py`).
 Task needs the Editor tools (setup, sprite import, VFX build) and `Assets/_Project/Code/Editor/StudioSetup.cs` is missing → `python <skill>/scripts/install_unity.py` once (keeps existing files).
 
 ## Routing
@@ -77,18 +78,22 @@ Quick card covers it → read nothing. Else open only the listed `## section` of
 ## Delegation
 Agents ship with the plugin as `unity-2d-studio:<name>`; none in your agent list (skill-only install) → play every role yourself.
 architect=opus (cross-system design) · gameplay-coder, art-director, vfx-artist, qa-reviewer=sonnet · scribe=haiku (devlog, map).
-Prompt = `task ID | goal | acceptance | read: map, handoff path`. No pasted file contents.
+Prompt = `task ID | goal | acceptance | scope: files/folders it may edit | read: map, handoff path`. No pasted file contents.
 Default: do it yourself (measured: one-system task delegated = +17% cost, same quality). Delegate only when
-(a) 2+ independent tasks → several subagent calls in one message (no Agent Teams), (b) cross-system design → architect,
+(a) 2+ independent tasks with disjoint scopes (no shared scene/prefab/SO asset) → several subagent calls in one message
+(no Agent Teams, no worktrees: each one re-imports Unity's Library), (b) cross-system design → architect,
 (c) a long read-heavy job (many files/assets) the main context doesn't need. After a subagent: read its handoff only;
-don't re-read its files (its Stop hook already ran check_code). Follow-up fixes to its work → do inline.
+don't re-read its files (its Stop hook already ran check_code). You alone write `board.md`: set status from the reply's
+first field (`review|blocked`; qa: `pass`→done, `fail`→doing, `unverified`→ask user for one Unity switch/test run).
+Partial result (turn limit) → continue that agent with SendMessage, don't respawn. Follow-up fixes to its work → do inline.
+Plugin commands: `/unity-2d-studio:status` · `:review <ID>` · `:end-of-day`.
 
 ## State (`.studio/`)
 `brief.md gdd.md board.md deps.md PROJECT_MAP.md handoff/<ID>.md devlog/YYYY-MM-DD[-agent].md art/ vfx/<name>.yaml`
 Project `CLAUDE.md` ≤60 lines, telegraph pointers into `.studio/`.
 
 ## Scripts (`<skill>` = `${CLAUDE_SKILL_DIR}`; run `python <skill>/scripts/<name>`, also in references)
-`hooks.py` (PostToolUse → map if signatures changed; Stop → check_code on changed files) · `project_map.py [root] [--module NAME]` ·
+`hooks.py` (SessionStart → status; PostToolUse → map if signatures changed; Stop → check_code on changed files, handoff check) · `status.py [root]` · `project_map.py [root] [--module NAME]` ·
 `devlog.py <agent> | producer --summary` (end of day, pre-filled from handoffs) · `check_code.py [root] [--files …]` · `scene_check.py [root] [--files …]` ·
 `palette.py set role=#hex… | show` · `vfx_spec.py new <name> --preset … | build` · `logo_sheet.py <svg…>` · `install_unity.py [root]` · `asmdefs.py [root]` (asmdefs + package refs, no Setup click needed) ·
 `placeholder_sprites.py [--force]` (16x16 placeholder PNGs from `.studio/art/placeholders.yaml`, default set if missing).

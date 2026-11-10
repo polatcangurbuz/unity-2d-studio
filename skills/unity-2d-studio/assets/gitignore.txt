@@ -57,4 +57,7 @@ sysinfo.txt
 /.studio/console.log
 /.studio/test-results.txt
 /.studio/.pending_check*
-/.studio/.scene_stamp
+/.studio/.scene_stamp*
+/.studio/.agent_start*
+/.studio/.handoff_asked*
+/.studio/hook-errors.log
