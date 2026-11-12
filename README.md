@@ -1,6 +1,5 @@
 # Unity 2D Studio
 
-[![ci](https://github.com/polatcangurbuz/unity-2d-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/polatcangurbuz/unity-2d-studio/actions/workflows/ci.yml)
 ![version](https://img.shields.io/badge/version-1.3.0-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![unity](https://img.shields.io/badge/Unity-6%20%2B%20URP%2017-black)
