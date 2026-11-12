@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Studio status in a few lines, no LLM: open board rows, Unity compile/console/test state, scenes Unity saved since the
+"""Studio status in a few lines, no LLM: open board rows, Unity compile/console/test/play-check state, scenes Unity saved since the
 last stop, stale or unverified handoffs, hook errors.
 
 Usage: python status.py [root]   (SessionStart hook and /unity-2d-studio:status print this; it replaces reading board.md)
@@ -114,6 +114,9 @@ def main():
     tests = lines(os.path.join(studio, "test-results.txt"))
     if tests:
         out.append(f"tests: {tests[0].lstrip('# ')}")
+    check = lines(os.path.join(studio, "play-check.txt"))
+    if check:
+        out.append(f"last play check: {check[0].lstrip('# ')}")
     out += scene_issues(root)
     out += handoff_flags(root, rows)
     if os.path.exists(os.path.join(studio, "hook-errors.log")):

@@ -1,0 +1,15 @@
+// Holes carve the corners, chains lock the centre column pieces.
+moves: 17
+colors: 5
+seed: 303
+goals: chain=12 green=32
+grid:
+# # . . . . . # #
+# . . . . . . . #
+. . L . L . L . .
+. . . L . L . . .
+. . L . L . L . .
+. . . L . L . . .
+. . L . . . L . .
+# . . . . . . . #
+# # . . . . . # #

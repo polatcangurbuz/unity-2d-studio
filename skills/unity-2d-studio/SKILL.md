@@ -11,7 +11,7 @@ description: |
 ---
 
 # Unity 2D Studio
-You = **Producer**: plan, keep board, talk to user, delegate. Knowledge loads only when needed.
+You = **Producer**: plan, keep board, talk to user, do the work. Knowledge loads only when needed.
 
 **Step 0 · engine check (one Glob):** `Assets/` + `ProjectSettings/ProjectVersion.txt` → Unity, continue.
 Empty folder + new-game request → Kickoff. Anything else (`project.godot`, Phaser/web `package.json`, other engine, user names one)
@@ -19,84 +19,71 @@ Empty folder + new-game request → Kickoff. Anything else (`project.godot`, Pha
 
 ## Quick card (small code tasks need nothing else)
 1. Read `.studio/PROJECT_MAP.md` + task handoff before any `.cs`. Grep/Glob before Read; read ranges.
-   Independent reads/greps/writes → one message (parallel calls): every extra round-trip re-sends the whole context.
-   Script usage is in this file/sections: never open a script's or Editor tool's source, never run `--help`.
+   Independent reads/greps/writes/edits → one message (parallel calls): every extra round-trip re-sends the whole context.
+   Never open a script's or Editor tool's source, never run `--help`: usage is here and in the sections.
 2. Extend what exists: new state class, SO field, listener on existing event. No parallel system, no bool flags in Update.
 3. Smallest diff meeting acceptance. YAGNI: no new asmdef, Editor menu or base class unless the task needs it.
-4. Map shows a core type missing (state machine, channel, services, pool, tests) → `patterns.md § <name>`, that section only. Type exists → don't open patterns.
+4. Map shows a core type missing (state machine, channel, services, pool, tests) → `patterns.md § <name>`. Type exists → don't open patterns.
 5. Files only in `Assets/_Project/`; namespace `<ns>.<Module>` = asmdef; one class per file.
 6. Comments: no `/// <summary>`, no blocks; ≤1 line, *why* only. Designer help → `[Tooltip]`. Shortcut → `// DEBT: <upgrade>`.
 7. `[SerializeField] private T _camelCase`; no public fields; PascalCase types/members; events past tense.
-8. Tunables (counts, speeds, waves) → SO fields with `[Min]/[Range]/[Tooltip]`; `[CreateAssetMenu]`; SO read-only at runtime.
-9. Spawned often → `UnityEngine.Pool.ObjectPool<T>` used directly by its owner (wrapper only if several owners need it, minimal); release, never Destroy.
+8. Tunables → SO fields with `[Min]/[Range]/[Tooltip]`; `[CreateAssetMenu]`; SO read-only at runtime.
+9. Spawned often → `UnityEngine.Pool.ObjectPool<T>` used directly by its owner; release, never Destroy.
    Cross-system news → SO event channel; reuse existing channel types.
-10. Hot path: no GetComponent/Find/LINQ/alloc per frame; cache in Awake; events over polling. Never `FindObjectOfType`/`GameObject.Find`.
+10. Hot path: no GetComponent/Find/LINQ/alloc per frame; cache in Awake. Never `FindObjectOfType`/`GameObject.Find`.
 11. Branching rule → plain C# class + EditMode test. Unity 6 async → `Awaitable` + `destroyCancellationToken`.
 12. No `?.`/`??` on UnityEngine.Object (fake null) → `if (x != null)`.
 13. Library ladder: Unity package → already in project → MIT/Apache/BSD pkg (verify LICENSE, log `.studio/deps.md`) → own minimal code.
-14. Never read whole `.unity`/`.prefab`/`.asset` YAML (grep GUID or MCP).
-    Scene-building task: never "playable"/done before the user pressed Play once and `.studio/console.log` is clean.
-    Unclear runtime bug: before reading YAML or code, log state with `Debug.LogError("[DIAG] …")`, ask for one Play, read console.log, remove the logs.
-15. Code/board task done = `.studio/handoff/<ID>.md` ≤20 lines (`# <ID> <title> · <agent> · <date>`, then `goal | files | api | events | tests | open | next`) → board status.
-    Advice/prompt-only requests: no handoff, no board edit. You finish another agent's task → update its handoff too.
-    Map refresh + rule check + compile check (dotnet) + scene check (scenes Unity saved) run as plugin hooks: don't run them by hand; fix what the Stop hook reports.
-    check_code fails on: file >300 lines · `/// <summary>` · `/* */` or 2+ consecutive `//` lines · `FindObject(s)OfType`/`Find*ByType`/
-    `GameObject.Find`/`Find*WithTag`/`transform.Find("…")` · `GetComponent*` in Update/FixedUpdate/LateUpdate · public fields
-    (const, static readonly, events, properties OK) · files outside `Assets/_Project/` (ThirdParty/Plugins/StreamingAssets and URP's root assets OK) ·
-    `StudioEditorUtil`/other Studio tools without `using Studio.EditorTools;`.
-    Builders: `using Studio.EditorTools;` · scene via `StudioEditorUtil.BuildScene(path, scene => …)`, assets loaded INSIDE it
-    (loaded before NewScene they wire as null) · big ones split from the start into Layout / Art / UI / Util files.
-16. User: their language, short. All questions in one batch with defaults. Same fix fails twice → stop, board `blocked: <why>`, tell the user.
-17. Create `.cs`/`.md` files with the Write tool, one per call; shell heredocs only for short single-file jobs (Git Bash breaks multi-file heredocs).
+14. Never read whole `.unity`/`.prefab`/`.asset` YAML (grep GUID or MCP). Editor work → `.studio/menu.request` + `.studio/play-check.request`,
+    the open Editor runs them (unity-bridge § Requests). Scene task done = `.studio/play-check.txt` `clean` AND its shots read.
+15. Code/board task done = `.studio/handoff/<ID>.md` ≤20 lines (`# <ID> <title> · <agent> · <date>`, then `goal | files | api | events | tests | open | next`)
+    → board status. Advice/prompt-only requests: no handoff, no board edit.
+16. Hooks run map refresh, check_code, dotnet compile and scene check: don't run them by hand; fix what they report (rules: qa-and-perf § check_code).
+17. User: their language, short. All questions in one batch with defaults. Same fix fails twice → board `blocked: <why>`, tell the user.
+18. `.cs`/`.md` files with the Write tool; shell heredocs only for short single-file jobs (Git Bash breaks multi-file heredocs).
 
 ## Session start
 No `.studio/brief.md` → Kickoff (`studio-workflow.md § Kickoff`). Else read `.studio/PROJECT_MAP.md`; the SessionStart hook already
-printed `studio status` (open board rows, console/test state) → don't read `board.md` unless you edit it (no hooks → `scripts/status.py`).
-Task needs the Editor tools (setup, sprite import, VFX build) and `Assets/_Project/Code/Editor/StudioSetup.cs` is missing → `python <skill>/scripts/install_unity.py` once (keeps existing files).
+printed `studio status` → don't read `board.md` unless you edit it (no hooks → `scripts/status.py`).
+Task needs the Editor tools and `Assets/_Project/Code/Editor/StudioSetup.cs` is missing → `python <skill>/scripts/install_unity.py` once.
 
 ## Routing
-Quick card covers it → read nothing. Else open only the listed `## section` of the file (Grep `^## ` for line numbers, read that range).
-| Task | Read (`references/…`) | Agent |
+Quick card covers it → read nothing. Else read only the listed sections, all in ONE Bash call:
+`sed -n '/^## Name/,/^## /p' <skill>/references/<file>.md` (chain several with `;`). Agent column: only per § Delegation.
+| Task | `references/…` § | Agent |
 |---|---|---|
-| New project, phase change, board, handoff | studio-workflow § Kickoff/§ Board/§ Handoff | (you) |
-| End of day, devlogs | studio-workflow § Devlog | scribe (if installed) |
+| New project, phase change, board, handoff, end of day | studio-workflow § Kickoff/Board/Handoff/Devlog | (you) · scribe |
 | Map, compression style, model choice | token-economy § the needed letter | scribe |
-| New system, manager, bootstrap, asmdef | architecture § Shape/§ Managers/§ Assemblies | architect |
-| Event channel, state machine design | architecture § Communication/§ State machines | architect |
-| Mechanic needing a pattern (strategy, command…) | code-standards § Patterns | gameplay-coder |
-| SO data, save, Addressables | data-and-assets § ScriptableObjects/§ Loading/§ Save | gameplay-coder |
-| Sprites, tilemap, physics, pooling, GC | data-and-assets § Sprites/§ Tilemaps/§ Physics/§ Pooling | gameplay-coder |
+| New system, manager, bootstrap, asmdef, event channel, state machine | architecture § Shape/Managers/Assemblies/Communication/State machines | architect |
+| Mechanic needing a pattern | code-standards § Patterns | gameplay-coder |
+| SO data, save, Addressables, sprites, tilemap, physics, pooling, GC | data-and-assets § the needed one | gameplay-coder |
 | Project setup, scenes, hierarchy, inspector, git | scene-and-folders § the needed one | architect |
-| Work inside Unity Editor (no file-only path) | unity-bridge § MCP or § No MCP | (any) |
-| Review, tests, perf, release gate | qa-and-perf § Review/§ Tests/§ Budgets | qa-reviewer |
-| Missing core type (state machine, channel, services, pool, tests) | patterns § that name | gameplay-coder |
-| Art bible, palette, refs, sprite import, accessibility | art-direction § Order/§ Palette/§ References/§ Import | art-director |
-| Image-model prompts (sprites, tiles, key art) | image-prompting § Model notes + § Sprite prompt. `.studio/art/` already has bible + model-notes + a prompt file → read those + one prompt file as template; no reference | art-director |
+| Work inside Unity Editor, run menus, play check, builders | unity-bridge § Requests/Play check/Builder gotchas (§ MCP if present) | (any) |
+| Review, tests, perf, release gate, Mobile/WebGL/PC | qa-and-perf § Review/Tests/Budgets/Platforms | qa-reviewer |
+| Missing core type | patterns § that name | gameplay-coder |
+| Art bible, palette, refs, sprite import | art-direction § Order/Palette/References/Import | art-director |
+| Producing assets (first time: which pipeline) | art-direction § Pipeline → § Blender or image-prompting | art-director |
+| Image-model prompts | image-prompting § Model notes + § Sprite prompt; `.studio/art/` has bible + model-notes + a prompt file → read those, one as template | art-director |
 | Logo, app icon, splash | logo § Brief → § Concepts → § Test → § Kit | art-director |
-| Particles, Effekseer, textures, shaders | vfx-materials-shaders § Particles/§ Runtime/§ Shaders | vfx-artist |
-| Audio, hit stop, shake, squash, tweens | audio-and-juice § Audio/§ Visual juice/§ Tweens | gameplay-coder / vfx-artist |
+| Particles, Effekseer, textures, shaders, 2D lights | vfx-materials-shaders § Particles/Runtime/Shaders/Lighting 2D | vfx-artist |
+| Sprite animation, Animator | animation § Choose → needed one | gameplay-coder |
+| Input, touch, camera follow | input-and-camera § Input/Touch/Camera | gameplay-coder |
+| HUD, menus, popups | ui § Canvas/Build/Screens/Juice | gameplay-coder |
+| Match-3 / swap puzzle | puzzle-match3 § Install first, then needed one | gameplay-coder |
+| Audio, hit stop, shake, tweens | audio-and-juice § Audio/Visual juice/Tweens | vfx-artist |
 | Third-party credits | CREDITS | (you) |
 
 ## Delegation
-Agents ship with the plugin as `unity-2d-studio:<name>`; none in your agent list (skill-only install) → play every role yourself.
-architect=opus (cross-system design) · gameplay-coder, art-director, vfx-artist, qa-reviewer=sonnet · scribe=haiku (devlog, map).
-Prompt = `task ID | goal | acceptance | scope: files/folders it may edit | read: map, handoff path`. No pasted file contents.
-Default: do it yourself (measured: one-system task delegated = +17% cost, same quality). Delegate only when
-(a) 2+ independent tasks with disjoint scopes (no shared scene/prefab/SO asset) → several subagent calls in one message
-(no Agent Teams, no worktrees: each one re-imports Unity's Library), (b) cross-system design → architect,
-(c) a long read-heavy job (many files/assets) the main context doesn't need. After a subagent: read its handoff only;
-don't re-read its files (its Stop hook already ran check_code). You alone write `board.md`: set status from the reply's
-first field (`review|blocked`; qa: `pass`→done, `fail`→doing, `unverified`→ask user for one Unity switch/test run).
-Partial result (turn limit) → continue that agent with SendMessage, don't respawn. Follow-up fixes to its work → do inline.
-Plugin commands: `/unity-2d-studio:status` · `:review <ID>` · `:end-of-day`.
+Default: do it yourself, art and prompt tasks included. Delegate only 2+ independent tasks with disjoint scopes (several calls in one
+message), cross-system design (architect) or a long read-heavy job: studio-workflow § Delegating. No agents listed (skill-only) → every role is yours.
+Prompt = `task ID | goal | acceptance | scope | read: map, handoff path`, no pasted files. After it: relay its reply, read its handoff only.
 
 ## State (`.studio/`)
-`brief.md gdd.md board.md deps.md PROJECT_MAP.md handoff/<ID>.md devlog/YYYY-MM-DD[-agent].md art/ vfx/<name>.yaml`
-Project `CLAUDE.md` ≤60 lines, telegraph pointers into `.studio/`.
+`brief.md gdd.md board.md deps.md PROJECT_MAP.md handoff/<ID>.md devlog/YYYY-MM-DD[-agent].md art/ vfx/<name>.yaml`. Project `CLAUDE.md` ≤60 lines.
 
-## Scripts (`<skill>` = `${CLAUDE_SKILL_DIR}`; run `python <skill>/scripts/<name>`, also in references)
-`hooks.py` (SessionStart → status; PostToolUse → map if signatures changed; Stop → check_code on changed files, handoff check) · `status.py [root]` · `project_map.py [root] [--module NAME]` ·
-`devlog.py <agent> | producer --summary` (end of day, pre-filled from handoffs) · `check_code.py [root] [--files …]` · `compile_check.py [root] --files … | --editor-log` · `scene_check.py [root] [--files …]` ·
-`palette.py set role=#hex… | show` · `vfx_spec.py new <name> --preset … | build` · `logo_sheet.py <svg…>` · `install_unity.py [root]` · `asmdefs.py [root]` (asmdefs + package refs, no Setup click needed) ·
-`placeholder_sprites.py [--force]` (16x16 placeholder PNGs from `.studio/art/placeholders.yaml`, default set if missing).
-Repetitive art/VFX/devlog work → these, not hand-written. Skill-only install (no hooks) → after `.cs` edits run `project_map.py` and `check_code.py --files <changed>` yourself; after a builder click, `scene_check.py`.
+## Scripts (`python <skill>/scripts/<name>`, `<skill>` = `${CLAUDE_SKILL_DIR}`)
+`status.py` · `project_map.py [--module N]` · `devlog.py <agent> | producer --summary` · `check_code.py [--files …]` · `compile_check.py` ·
+`scene_check.py` · `install_unity.py [--pack match3]` · `asmdefs.py` · `palette.py set background=#hex role=#hex… | show` (5-8 roles, one
+`background`) · `vfx_spec.py new <name> --preset … | build` · `logo_sheet.py <svg…>` · `placeholder_sprites.py` ·
+`sprite_from_image.py <img> --cell WxH` · `blender_sprites.py check | new <set> | render <set>`.
+Repetitive art/VFX/devlog work → these, not by hand. Skill-only (no hooks) → after `.cs` edits run `project_map.py` + `check_code.py --files <changed>`.

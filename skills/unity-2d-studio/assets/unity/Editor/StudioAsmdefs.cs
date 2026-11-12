@@ -10,7 +10,16 @@ namespace Studio.EditorTools
     // Same layout and package rules as scripts/asmdefs.py, so either one can create the asmdefs first.
     public static class StudioAsmdefs
     {
-        private const string TestRunnerDefine = "STUDIO_TEST_RUNNER";
+        // Editor asmdef only; "" = any version, "3.0.0" = 3.0.0 or newer. Same list as scripts/asmdefs.py.
+        private static readonly (string package, string expression, string define)[] EditorDefines =
+        {
+            ("com.unity.test-framework", "", "STUDIO_TEST_RUNNER"),
+            ("com.unity.ugui", "", "STUDIO_UGUI"),
+            ("com.unity.ugui", "2.0.0", "STUDIO_TMP"),
+            ("com.unity.textmeshpro", "", "STUDIO_TMP"),
+            ("com.unity.render-pipelines.universal", "", "STUDIO_URP"),
+            ("com.unity.cinemachine", "3.0.0", "STUDIO_CINEMACHINE"),
+        };
 
         private static readonly (string package, string reference, string[] modules)[] PackageRefs =
         {
@@ -19,6 +28,8 @@ namespace Studio.EditorTools
             ("com.unity.render-pipelines.universal", "Unity.RenderPipelines.Core.Runtime", new[] { "Gameplay", "Editor" }),
             ("com.unity.render-pipelines.universal", "Unity.RenderPipelines.Universal.Runtime", new[] { "Gameplay", "Editor" }),
             ("com.unity.render-pipelines.universal", "Unity.RenderPipelines.Universal.2D.Runtime", new[] { "Gameplay", "Editor" }),
+            ("com.unity.cinemachine", "Unity.Cinemachine", new[] { "Gameplay", "Editor" }),
+            ("com.unity.2d.animation", "Unity.2D.Animation.Runtime", new[] { "Gameplay" }),
             ("com.unity.test-framework", "UnityEngine.TestRunner", new[] { "Editor" }),
             ("com.unity.test-framework", "UnityEditor.TestRunner", new[] { "Editor" }),
         };
@@ -39,15 +50,20 @@ namespace Studio.EditorTools
 
         private static Dictionary<string, string> ReadPackages()
         {
-            var manifest = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? ".", "Packages", "manifest.json");
-            var text = File.Exists(manifest) ? File.ReadAllText(manifest) : string.Empty;
+            // The lock file adds dependencies of feature packages (2D Animation comes with com.unity.feature.2d).
+            var folder = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? ".", "Packages");
+            var text = string.Concat(new[] { "manifest.json", "packages-lock.json" }
+                .Select(f => Path.Combine(folder, f)).Where(File.Exists).Select(File.ReadAllText));
             return Regex.Matches(text, "\"(com\\.[\\w.-]+)\"\\s*:\\s*\"([^\"]*)\"").Cast<Match>()
                 .GroupBy(m => m.Groups[1].Value).ToDictionary(g => g.Key, g => g.First().Groups[2].Value);
         }
 
         private static List<string> PackageReferences(string module, Dictionary<string, string> packages)
         {
+            // Cinemachine 2.x has other assembly and type names; the studio targets 3.x only.
+            var cm2 = packages.TryGetValue("com.unity.cinemachine", out var cm) && Regex.IsMatch(cm, "^[012]\\.");
             var refs = PackageRefs.Where(r => packages.ContainsKey(r.package) && r.modules.Contains(module))
+                .Where(r => !(cm2 && r.reference == "Unity.Cinemachine"))
                 .Select(r => r.reference).ToList();
             // TMP ships inside uGUI 2.x (Unity 6); older projects have it as its own package.
             var ugui2 = packages.TryGetValue("com.unity.ugui", out var v) && !v.StartsWith("1.");
@@ -62,11 +78,11 @@ namespace Studio.EditorTools
             var dir = Path.Combine(Application.dataPath, "_Project", "Code", module);
             Directory.CreateDirectory(dir);
             var extra = isTest ? new List<string>() : PackageReferences(module, packages);
-            var testRunner = module == "Editor" && packages.ContainsKey("com.unity.test-framework");
+            var editor = module == "Editor";
             var existing = Directory.GetFiles(dir, "*.asmdef").FirstOrDefault();
             if (existing != null)
             {
-                Merge(existing, extra, testRunner, log);
+                Merge(existing, extra, editor, log);
                 return;
             }
 
@@ -82,14 +98,14 @@ namespace Studio.EditorTools
             json.Append($"    \"precompiledReferences\": {JsonArray(isTest ? new[] { "nunit.framework.dll" } : new string[0])},\n");
             json.Append($"    \"autoReferenced\": {(isTest ? "false" : "true")},\n");
             json.Append($"    \"defineConstraints\": {JsonArray(isTest ? new[] { "UNITY_INCLUDE_TESTS" } : new string[0])},\n");
-            json.Append($"    \"versionDefines\": {(testRunner ? TestRunnerVersionDefine : "[]")},\n");
+            json.Append($"    \"versionDefines\": [{(editor ? string.Join(", ", EditorDefines.Select(DefineJson)) : string.Empty)}],\n");
             json.Append("    \"noEngineReferences\": false\n}\n");
             File.WriteAllText(Path.Combine(dir, name + ".asmdef"), json.ToString());
             log.AppendLine($"+ asmdef {name}" + (extra.Count > 0 ? $" (+ {string.Join(", ", extra)})" : string.Empty));
         }
 
-        // Existing asmdefs keep everything; only missing package references (and the test-runner define) are added.
-        private static void Merge(string path, List<string> extra, bool testRunner, StringBuilder log)
+        // Existing asmdefs keep everything; only missing package references (and, for Editor, missing STUDIO_* defines) are added.
+        private static void Merge(string path, List<string> extra, bool editor, StringBuilder log)
         {
             var text = File.ReadAllText(path);
             var match = Regex.Match(text, "\"references\"\\s*:\\s*\\[([^\\]]*)\\]");
@@ -98,15 +114,27 @@ namespace Studio.EditorTools
             var missing = extra.Where(r => !current.Contains(r)).ToList();
             var updated = missing.Count == 0 ? text
                 : text.Substring(0, match.Index) + $"\"references\": {JsonArray(current.Concat(missing))}" + text.Substring(match.Index + match.Length);
-            if (testRunner && !updated.Contains(TestRunnerDefine))
-                updated = Regex.Replace(updated, "\"versionDefines\"\\s*:\\s*\\[\\s*\\]", "\"versionDefines\": " + TestRunnerVersionDefine);
+            if (editor) updated = AddDefines(updated);
             if (updated == text) return;
             File.WriteAllText(path, updated);
             log.AppendLine($"* asmdef {Path.GetFileNameWithoutExtension(path)}" + (missing.Count > 0 ? $" + {string.Join(", ", missing)}" : string.Empty));
         }
 
-        private static string TestRunnerVersionDefine =>
-            $"[{{ \"name\": \"com.unity.test-framework\", \"expression\": \"\", \"define\": \"{TestRunnerDefine}\" }}]";
+        // versionDefines entries are flat objects, so the array ends at the first ']' after its start.
+        private static string AddDefines(string text)
+        {
+            var match = Regex.Match(text, "\"versionDefines\"\\s*:\\s*\\[([^\\]]*)\\]");
+            if (!match.Success) return text;
+            var body = match.Groups[1].Value;
+            var missing = EditorDefines.Where(d => !Regex.IsMatch(body,
+                $"\"name\"\\s*:\\s*\"{Regex.Escape(d.package)}\"[^}}]*\"define\"\\s*:\\s*\"{d.define}\"")).Select(DefineJson).ToList();
+            if (missing.Count == 0) return text;
+            var entries = body.Trim().Length > 0 ? body.TrimEnd() + ", " + string.Join(", ", missing) : string.Join(", ", missing);
+            return text.Substring(0, match.Index) + $"\"versionDefines\": [{entries}]" + text.Substring(match.Index + match.Length);
+        }
+
+        private static string DefineJson((string package, string expression, string define) d) =>
+            $"{{ \"name\": \"{d.package}\", \"expression\": \"{d.expression}\", \"define\": \"{d.define}\" }}";
 
         private static string JsonArray(IEnumerable<string> items) =>
             "[" + string.Join(", ", items.Select(i => $"\"{i}\"")) + "]";

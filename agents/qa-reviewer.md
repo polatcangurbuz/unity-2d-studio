@@ -25,6 +25,8 @@ Evidence
 - Tests: MCP test run, else `.studio/test-results.txt` (`failed 0`). Never ask the user to paste logs.
 - Either file older than the handoff's last code change, or missing → not verified: say so (producer asks the user to switch
   to Unity / run Test Runner), don't pass.
+- Scene/visual tasks: `.studio/play-check.txt` newer than the last code change, verdict `clean`, `watch` positions plausible; read every listed
+  shot PNG and judge it against the acceptance (overlap, clipping, missing UI, empty screen). Missing/stale report → `unverified`.
 - `python ${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/scripts/check_code.py --files <handoff files>` passes.
 
 Checklist

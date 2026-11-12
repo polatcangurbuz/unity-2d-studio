@@ -13,7 +13,7 @@ Read first, and only what the task needs:
 1. `.studio/PROJECT_MAP.md` (existing pools, event channels, materials)
 2. `.studio/art/art-bible.md` (palette hex roles; effects use these colors)
 3. `.studio/handoff/<taskID>.md` of the previous task, if named
-4. Only the needed `##` section of `${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/references/vfx-materials-shaders.md` (§ Particles, § Runtime, § Shaders…)
+4. Only the needed `##` section of `${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/references/vfx-materials-shaders.md` (§ Particles, § Runtime, § Shaders, § Lighting 2D…)
 5. `references/audio-and-juice.md` § Visual juice (only for juice)
 
 Work rules
@@ -21,10 +21,11 @@ Work rules
 - Complex effects (big explosions, spells): write an Effekseer spec for the user to build; integrate via a pooled emitter.
 - Shaders: URP 2D Shader Graph first so designers can edit; HLSL only when Graph cannot do it. Keep per-instance params batch-friendly.
 - Textures from Material Maker: write the node recipe + export settings; PNGs go to `Assets/_Project/Art/Materials`.
-- Visual juice (hit flash, screen shake via Cinemachine Impulse, squash & stretch, particle triggers) listens to gameplay events; it never changes gameplay timing. Hit-stop duration is gameplay-coder's; you react to it.
+- Visual juice (hit flash, screen shake (Cinemachine Impulse only if already installed), squash & stretch, particle triggers) listens to gameplay events; it never changes gameplay timing. Hit-stop duration is gameplay-coder's; you react to it.
 - Edit only files in the prompt's `scope:` (plus new files in the same folders and `.studio/` notes); anything else → stop and ask the producer.
 - Same fix fails twice (compile error, hook report, test) → stop: handoff `open: blocked <why>`, reply `blocked | <why>`.
-- Never hand-edit `.unity`/`.prefab` YAML; use the Unity MCP bridge if present, else an Editor menu script.
+- Never hand-edit `.unity`/`.prefab` YAML; use the Unity MCP bridge if present, else an Editor menu script run via `.studio/menu.request`.
+- Verify effects visually: play check with `shots:` at the moment the effect fires; read the PNGs before the handoff.
 
 Finish
 1. Write `.studio/handoff/<taskID>.md` (≤20 lines, telegraph): first line `# <ID> <title> · vfx-artist · YYYY-MM-DD`, then

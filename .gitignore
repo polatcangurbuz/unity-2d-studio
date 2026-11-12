@@ -9,3 +9,7 @@ skill-creator/
 # Python
 __pycache__/
 *.pyc
+
+# dotnet (match3 pack tests/simulator)
+bin/
+obj/

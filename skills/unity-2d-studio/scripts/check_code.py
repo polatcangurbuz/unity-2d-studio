@@ -23,7 +23,7 @@ ALLOWED_ROOT_FILES = {"UniversalRenderPipelineGlobalSettings.asset", "DefaultVol
                       "Readme.asset"}
 FIND_RE = re.compile(r"\b(FindObjectOfType|FindObjectsOfType|FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType"
                      r"|FindWithTag|FindGameObjectWithTag|FindGameObjectsWithTag)\b|\bGameObject\.Find\s*\(|(?<!\bShader)\.Find\s*\(\s*\"")
-STUDIO_USE_RE = re.compile(r"\b(StudioEditorUtil|StudioConsoleBridge|StudioSetup|StudioAsmdefs|VfxBuilder)\s*\.")
+STUDIO_USE_RE = re.compile(r"\b(StudioEditorUtil|StudioConsoleBridge|StudioSetup|StudioAsmdefs|VfxBuilder|StudioPlayCheck|StudioAnimUtil|StudioUiUtil|StudioLightUtil|StudioPlatforms|StudioCameraUtil|StudioRequests)\s*\.")
 UPDATE_RE = re.compile(r"\bvoid\s+(Update|FixedUpdate|LateUpdate)\s*\(\s*\)\s*\{")
 GETCOMP_RE = re.compile(r"\b(GetComponent|GetComponents|GetComponentInChildren|GetComponentInParent)\b")
 PUBLIC_FIELD_RE = re.compile(
@@ -103,6 +103,21 @@ def outside_project(rel):
     return parts[1] not in ALLOWED_ROOTS
 
 
+def setup_will_remove(root, rel):
+    """Unity's template SampleScene before StudioSetup ran: Setup deletes it when it holds only the default objects."""
+    if rel != "Assets/Scenes/SampleScene.unity":
+        return False
+    if os.path.exists(os.path.join(root, "Assets/_Project/Scenes/Bootstrap.unity")) or \
+            not os.path.exists(os.path.join(root, "Assets/_Project/Code/Editor/StudioSetup.cs")):
+        return False
+    try:
+        text = open(os.path.join(root, rel), encoding="utf-8", errors="replace").read()
+    except OSError:
+        return False
+    names = re.findall(r"--- !u!1 &\d+\s+GameObject:[\s\S]*?m_Name: (.*)", text)
+    return all(n.strip() in ("Main Camera", "Global Light 2D", "Directional Light") for n in names)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("root", nargs="?", default=".")
@@ -131,6 +146,9 @@ def main():
         if path.endswith(".cs"):
             issues = check_file(path, rel)
             checked += 1
+        elif setup_will_remove(root, rel):
+            print(f"{rel}: pending Tools > Studio > Setup Project (deletes Unity's empty template scene)")
+            continue
         else:
             issues = [(1, "location", "outside Assets/_Project/")] if outside_project(rel) else []
         if issues:

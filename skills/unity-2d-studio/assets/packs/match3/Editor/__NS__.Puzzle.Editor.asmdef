@@ -1,0 +1,22 @@
+{
+    "name": "__NS__.Puzzle.Editor",
+    "rootNamespace": "__NS__.Puzzle.EditorTools",
+    "references": [
+        "__NS__.Puzzle",
+        "__NS__.Puzzle.View",
+        "__NS__.Editor",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

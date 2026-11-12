@@ -1,0 +1,16 @@
+name: Feature request
+description: A 2D topic, genre pack or tool the studio should cover
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you want to build
+      description: The game or task, and where the studio falls short today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested approach
+      description: Optional. If it comes from another project, link it and name its license.

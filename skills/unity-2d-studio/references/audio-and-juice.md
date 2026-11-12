@@ -14,12 +14,16 @@ Owner: gameplay-coder. Only when the game needs it (architecture § Managers).
 ## Visual juice
 Split: gameplay-coder owns timing that changes play (hit stop length, coyote time); vfx-artist owns visuals reacting to events.
 - Hit stop: `Time.timeScale = 0` for 0.03-0.08 s via unscaled-time `Awaitable`/coroutine; one owner, ignores overlapping requests; never in menus.
-- Screen shake: Cinemachine Impulse (official package, ladder rung 1): `CinemachineImpulseSource` on the cause, `CinemachineImpulseListener` on the camera;
-  amplitude by event size; respect accessibility toggle.
+- Screen shake: Cinemachine already in project → Impulse (`CinemachineImpulseSource` on the cause, listener on the camera). Else 10-line offset on the
+  camera's parent (Perlin or random, decaying 0.1-0.3 s); don't add Cinemachine just for shake. Amplitude by event size; accessibility toggle.
 - Squash & stretch: scale the sprite child, not the physics root; preserve area (x·y ≈ 1); 0.08-0.15 s back to 1.
 - Hit flash: shader `_Flash` via MaterialPropertyBlock (vfx-materials-shaders § Shaders), 1-2 frames.
 - Particles on events: vfx-materials-shaders § Runtime. Damage numbers: pooled TMP text.
 - Every juice effect listens to an event; gameplay code never calls juice directly.
+
+- Polish bar (pro-looking): every input answers within 1 frame (press scale 0.95) · nothing teleports (ease every move, overshoot 4-8 %) ·
+  anticipation before big events (swell, squash, 0.05-0.12 s) · layered feedback per event (sprite + particles + sound + UI number) ·
+  combos escalate (pitch +5 %/step, bigger shake, text) · idle hints · reduce-motion toggle disables shake/flash.
 
 ## Tweens
 Library ladder (code-standards § Library ladder):

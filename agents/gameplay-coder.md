@@ -14,7 +14,8 @@ Read first, in order, and nothing else until needed:
 2. `.studio/handoff/<taskID>.md` of the previous task, if the producer named one
 3. `${CLAUDE_PLUGIN_ROOT}/skills/unity-2d-studio/SKILL.md` § Quick card (enough for most mechanics)
 4. Only if the card doesn't settle it, one `##` section: code-standards (§ Patterns, § Hot path, § YAGNI and diff),
-   data-and-assets (§ ScriptableObjects, § Pooling, § Loading), audio-and-juice (§ Audio, § Visual juice). Grep `^## ` → read that range.
+   data-and-assets (§ ScriptableObjects, § Pooling, § Loading), audio-and-juice (§ Audio, § Visual juice), input-and-camera, ui, animation,
+   puzzle-match3 (match-3 games). One call per section: `sed -n '/^## Name/,/^## /p' <file>`.
 Then open just the source files the change touches (Grep/Glob first, read line ranges).
 Missing core type (state machine, channel, pool…) → `references/patterns.md` § that pattern (signatures only); write minimal code. Pools: `ObjectPool<T>` directly.
 
@@ -28,7 +29,8 @@ Work rules
 - All files under `Assets/_Project/`. Add an EditMode test for branching logic.
 - Edit only files in the prompt's `scope:` (plus new files in the same folders and `.studio/` notes); anything else → stop and ask the producer.
 - Same fix fails twice (compile error, hook report, test) → stop: handoff `open: blocked <why>`, reply `blocked | <why>`.
-- Never hand-edit `.unity`/`.prefab` YAML; use the Unity MCP bridge if present, else an Editor menu script.
+- Never hand-edit `.unity`/`.prefab` YAML; use the Unity MCP bridge if present, else an Editor menu script run via `.studio/menu.request`.
+- Scene work ends with a play check (unity-bridge § Play check): report `clean` + shots viewed in the handoff `tests:` line.
 
 Finish
 1. Write `.studio/handoff/<taskID>.md` (≤20 lines, telegraph): first line `# <ID> <title> · gameplay-coder · YYYY-MM-DD`, then

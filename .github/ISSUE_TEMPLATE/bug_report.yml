@@ -1,0 +1,34 @@
+name: Bug report
+description: Something in the plugin did not work as described
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you asked Claude, what it did, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Hook or script output, or the matching lines of `.studio/console.log` / `.studio/play-check.txt`.
+      render: text
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Plugin version, Unity version, render pipeline, OS, Python version
+      placeholder: "1.3.0 · Unity 6000.0.58f2 · URP 17 · Windows 11 · Python 3.12"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Install type
+      options:
+        - Plugin (skill + subagents + hooks)
+        - Skill only (npx skills add)
+    validations:
+      required: true

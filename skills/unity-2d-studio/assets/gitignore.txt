@@ -61,3 +61,8 @@ sysinfo.txt
 /.studio/.agent_start*
 /.studio/.handoff_asked*
 /.studio/hook-errors.log
+/.studio/play-check.*
+/.studio/shots/
+/.studio/menu.request
+/.studio/menu-result.txt
+/.studio/platform.md

@@ -83,16 +83,20 @@ def distance(a, b):
 
 
 def parse_pairs(items):
-    palette = {}
+    # All problems in one message: each retry costs the agent a full round-trip.
+    palette, errors = {}, []
     for item in items:
-        m = re.fullmatch(r"([a-z][a-z0-9-]*)=#?([0-9a-fA-F]{6})", item.strip())
+        m = re.fullmatch(r"([A-Za-z][\w-]*)=#?([0-9a-fA-F]{6})", item.strip())
         if not m:
-            sys.exit(f"error: '{item}' is not role=#rrggbb")
-        palette[m.group(1)] = "#" + m.group(2).lower()
+            errors.append(f"'{item}' is not role=#rrggbb")
+            continue
+        palette[m.group(1).lower().replace("_", "-")] = "#" + m.group(2).lower()
     if not MIN_COLOURS <= len(palette) <= MAX_COLOURS:
-        sys.exit(f"error: {len(palette)} colours; art bible needs {MIN_COLOURS}-{MAX_COLOURS}")
+        errors.append(f"{len(palette)} colours; art bible needs {MIN_COLOURS}-{MAX_COLOURS} (merge accents or drop one)")
     if "background" not in palette:
-        sys.exit("error: one role must be 'background' (contrast checks use it)")
+        errors.append("one role must be named 'background' (contrast checks use it)")
+    if errors:
+        sys.exit("error: " + "; ".join(errors))
     return palette
 
 

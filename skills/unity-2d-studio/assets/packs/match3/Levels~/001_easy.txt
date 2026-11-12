@@ -1,0 +1,15 @@
+// Easy opener: open 9x9 board, two color goals.
+moves: 25
+colors: 5
+seed: 101
+goals: red=35 blue=35
+grid:
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .

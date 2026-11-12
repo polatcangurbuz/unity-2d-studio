@@ -1,0 +1,14 @@
+{
+    "name": "__NS__.Puzzle",
+    "rootNamespace": "__NS__.Puzzle",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

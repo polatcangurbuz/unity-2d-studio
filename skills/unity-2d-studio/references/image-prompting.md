@@ -1,5 +1,5 @@
 When to read: writing prompts for an image-generation model (sprites, backgrounds, key art, icons). Read only the needed `##` section.
-Sections: Model notes · Adapters · Sprite prompt · Other assets · After generation
+Sections: Model notes · MCP · Adapters · Sprite prompt · Other assets · After generation
 
 # Image prompting
 
@@ -18,6 +18,15 @@ license: <commercial terms summary>
 ```
 Prompts use only syntax listed there. No model list in this skill (they age); the cache is the source.
 
+## MCP
+`art-pipeline: image-mcp` (art-direction § Pipeline): the image model is a tool, so Claude generates directly. Same prompt rules as § Sprite prompt.
+- Style anchor: generate 2-3 variants of ONE key asset at the cheapest setting the tool offers (draft model/size) → user picks → save as
+  `.studio/art/anchor/<name>.png`; every later call passes it as reference image (style/character consistency), text states only the change.
+- Batch the rest with the anchor + fixed seed where supported; final quality setting only for approved drafts.
+- Ask transparent output if the tool supports it, else flat key colour; always finish with `sprite_from_image.py` (scale, palette, sheet name).
+- Ask the user for a credit budget once (e.g. "≤40 images this session"); count calls in `.studio/art/prompts/log.md`; stop at the cap.
+- Licence/commercial terms of the provider → `.studio/deps.md` before production use.
+
 ## Adapters
 | Style | Shape | Put bible in as |
 |---|---|---|
@@ -32,7 +41,8 @@ Every sprite prompt states all of these (e4 checks them):
 2. Style: `pixel art, <PPU> px grid, <outline rule>, light from <dir>`, palette roles as hex.
 3. View/angle: `side view, orthographic, facing right` (fixed for the whole set).
 4. Background: transparent if notes say native; else `flat solid #ff00ff background, no shadow, no ground`.
-5. Frames: `sprite sheet, <N> frames in one horizontal row, each frame <W>x<H> px, equal spacing` (W,H multiples of PPU).
+5. Frames: `sprite sheet, <N> frames in one horizontal row, each frame <W>x<H> px, equal spacing` (W,H multiples of PPU);
+   concept/key pose → `single sprite, 1 frame, <W>x<H> px`. In the prompt text itself, not only in its heading.
 6. Model syntax from notes: aspect = N·W : H, seed/style ref, negatives.
 Keyword-style example skeleton (fill syntax from notes, not from memory):
 `<subject>, pixel art, 16 px grid, 1px dark outline, light top-left, palette #1b1f3b #f2f2e9 #e04f5f, side view facing right,
@@ -47,6 +57,8 @@ Each prompt complete on one line, copy-paste ready: no placeholders (`<common ta
 - Icons/UI: flat, 1 colour role + outline, readable at 32 px.
 
 ## After generation
-Downscale with nearest-neighbour to exact grid (models rarely hit pixel-perfect) → remove key colour → name `<name>_sheet_<W>x<H>.png`
-→ drop in `Assets/_Project/Art/Sprites/` (SpriteImportRules slices it) → check palette drift: off-palette colours → remap or re-prompt.
+`python <skill>/scripts/sprite_from_image.py <image> --cell WxH [--frames N | --grid CxR] [--outline role|#hex] [--key auto|none|#hex] [--no-palette] [--force]`
+→ key background removed, frames split, one scale for all frames (block majority, no smearing), bottom-centre, colours mapped to the art-bible palette
+→ `Art/Sprites/<Stem>_sheet_<W>x<H>.png` (SpriteImportRules slices it). High `drift` → re-prompt with the palette hex codes, don't ship.
+Never hand-clean generated pixels in code.
 Log asset + model + licence in `.studio/deps.md` if commercial terms apply.

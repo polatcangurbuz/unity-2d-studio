@@ -1,5 +1,5 @@
 When to read: particle effect, explosion/hit/pickup VFX, Effekseer, procedural textures, normal maps, 2D shaders/materials. Read only the needed `##` section.
-Sections: Particles · Runtime · Effekseer · Material Maker · Shaders · Batching
+Sections: Particles · Runtime · Effekseer · Material Maker · Shaders · Lighting 2D · Batching
 
 # VFX, materials, shaders
 
@@ -48,6 +48,16 @@ URP 2D Shader Graph first (designers edit); HLSL only for what Graph can't do. S
 | water distortion | scene colour / UV offset by scrolling noise, `_Strength` small |
 | glow | emission colour > 1 + URP Bloom on 2D renderer + 2D Light (no shader if bloom suffices) |
 Per-instance values (flash amount, dissolve) via `MaterialPropertyBlock` or SpriteRenderer colour → keeps batching (§ Batching).
+
+## Lighting 2D
+URP 2D Renderer only (Lit sprites are black without a global light). Builder helpers (`StudioLightUtil`, Editor, URP present):
+`Global(intensity, color?)` (reuses the scene's) · `Point(parent, outerRadius, intensity, color, shadows)` · `ShadowCaster(go, selfShadows)`;
+new lights target all sorting layers (Unity's default is only Default → "light does nothing").
+- Mood: global 0.3-0.6 tinted by palette `shadow` role + few point lights on gameplay hotspots (torches, pickups, player); not one per object.
+- Normal maps: secondary texture `_NormalMap` on the sprite import; light `Normal Maps` quality Accurate only where read up close.
+- Shadows: ShadowCaster2D on large static occluders (walls, crates), not on every tile/enemy; Composite Shadow Caster for tilemaps.
+- Mobile budget: ≤4 overlapping lights per pixel, shadows off on low tier, light blend styles ≤2. Pixel art: Point light falloff hard (0-0.2).
+- Puzzle/UI-heavy games: Unlit sprites + baked glow sprites look the same and cost nothing.
 
 ## Batching
 Shared material per effect type; per-object variation through vertex colour/MPB, not new material instances (`renderer.material` = copy, avoid).

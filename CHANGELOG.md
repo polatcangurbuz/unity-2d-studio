@@ -1,6 +1,60 @@
 # Changelog
 
-## Unreleased
+## v1.3.0 · 2026-11-12
+From a comparison with other Unity agent skills/plugins (official Unity skills, Unity-MCP, game-studio templates): play-time
+verification, 2D topics and a genre pack for polished mobile puzzle games.
+- Play check (`StudioPlayCheck`, Editor): plays a scene N s, writes `.studio/play-check.txt` (verdict `clean | errors N | check watch |
+  aborted`, project errors with first `Assets/` frame, Unity/package errors counted apart, fps/worst frame/GC, watched objects start→end,
+  out-of-view) + ≤4 shots (`.studio/shots/`, Camera.main + overlay UI, ≤960 px, 9:16 for portrait games). Works with Unity in the
+  background and in batch (`-executeMethod Studio.EditorTools.StudioPlayCheck.RunBatch -studioCheck "…"`, exit 0/1).
+- Requests (`StudioRequests`): the open Editor polls `.studio/menu.request` (only `Tools/…` menus) and `.studio/play-check.request`;
+  resolves packages after a `manifest.json` change, refreshes + waits for compile, answers `# compile failed` on errors. No more
+  "click this menu" / "press Play" round-trips. Quick card: scene task done = clean play check + shots read.
+- Console bridge: play lines reset on ExitingEditMode, so Awake/OnEnable errors of the new Play are kept.
+- Builder helpers: `StudioAnimUtil` (sheet → flipbook clip, Animator states/params/transitions), `StudioUiUtil` (canvas, safe area,
+  panels, TMP/legacy labels, buttons, fill bars, TMP Essentials import), `StudioLightUtil` (global/point Light2D on all sorting layers,
+  shadow casters), `StudioCameraUtil` (Cinemachine 3 2D follow + confiner + impulse; compiled only when Cinemachine is installed),
+  `StudioPlatforms` (Mobile Portrait/Landscape, WebGL, PC presets → `.studio/platform.md`, never switches build target).
+- asmdefs: Editor defines `STUDIO_UGUI/TMP/URP/CINEMACHINE/TEST_RUNNER` (merged into existing asmdefs), refs for Cinemachine 3 and
+  2D Animation; packages read from `packages-lock.json` too (dependencies of feature packages count).
+- `sprite_from_image.py`: generated image → key removal, frame split, one-scale block-majority downscale, bottom-centre, palette
+  mapping with drift report, optional outline.
+- match3 pack (`install_unity.py --pack match3`): pure C# deterministic core (specials, combos, crates/ice/chains/holes, boosters,
+  shuffle, goals; 84 NUnit tests also run on plain .NET), greedy/random bots + simulator for pass-rate curves, 3 example levels;
+  view (step player with beat timing, pooled pieces, tweens, swipe input, juice, HUD, safe area) and a scene builder with
+  procedural placeholder art (one shape per colour). Verified in Unity 6000.0.58f2: scene builds and plays clean.
+- References: animation, input-and-camera, ui, puzzle-match3 (install, feel, difficulty targets, meta/economy, live ops, pro-look
+  checklist); vfx § Lighting 2D, qa § Platforms, unity-bridge § Requests/§ Play check, image-prompting § After generation,
+  audio-and-juice polish bar; Cinemachine only when already installed or the user agrees.
+- Hooks start through `hooks/run.sh` (python3 → python → py, version-checked: works where only `python3` exists and skips
+  Windows' Store stub).
+- gitignore: play-check output, shots, request/result files, platform notes.
+- Art pipeline is chosen at the first asset task, not at kickoff (art-direction § Pipeline): the skill detects Blender and image-model
+  MCP tools, offers only what works (`prompt` = current path, `blender`, `image-mcp`) with cost/quality notes, records `art-pipeline:`
+  in the brief and never asks again. All paths: style anchor first, batch after approval, one preview board, no re-renders of approved assets.
+- `blender_sprites.py check | new <set> | render <set>`: headless Blender (no MCP needed) renders a set from a JSON spec with one
+  light/camera/material rig: faceted gems (round or 3-8 sides, palette roles or hex) or imported models (.blend/.glb/.fbx/.obj) with
+  yaw directions and animation frames → `<name>_sheet_<W>x<H>.png`, soft ground shadow, ONE preview board for review.
+  Verified with Blender 5.2: 6 gems in ~9 s, a 4-frame model sheet in ~6 s; gems dropped into the match-3 scene play clean.
+- image-prompting § MCP: style anchor at draft settings, reference image on every call, credit cap asked once, licence logged.
+- README rewritten for first-time visitors (why, quick start, pipelines, numbers; technical details folded).
+- Cheaper runs, from the v1.3.0 eval traces:
+  - SKILL.md is 27% smaller. Delegation, builder and check_code details moved to the references that already own them.
+  - Sections are read in one call (`sed -n '/^## Name/,/^## /p'`) instead of grep plus a ranged read.
+  - Prompt-only art tasks stay with the producer, who relays a subagent's reply instead of re-reading its files.
+- `palette.py set` reports every problem at once. It accepts `_` and capitals in role names. One trace spent 3 extra round-trips here.
+- `check_code`: Unity's empty template `SampleScene` is reported as pending Setup Project, not as an issue. Setup deletes it.
+  A SampleScene holding user objects is still flagged.
+- image-prompting: concept/key-pose prompts state `single sprite, 1 frame`. The frame count must be in the prompt text, not only its heading.
+- Bug and feature issue templates.
+- Evals re-run (plugin vs plain Claude Code, Opus 5.5, `total_cost_usd`, 2026-11-12; plain = mean of 2 runs):
+  - All 9 tasks: $5.90 vs $7.83 (−25%).
+  - Script-decided checks: 44/44 vs 23/44.
+  - Before the fixes above: $6.90, with e2 +25%, e4 +28% and e5 +10%.
+  - Now every task is cheaper except e9 (Godot guard, +8%, $0.03, noise).
+  - The grader now counts subagents' web calls and uses the release scripts.
+
+## v1.2.0 · 2026-11-10
 From a session where a builder saved an empty tilemap composite and the error was only found after the user reported it.
 - `StudioEditorUtil.BakeTilemapColliders(tilemap, composite)`: static body → TilemapCollider2D (Merge) → `ProcessTilemapChanges` →
   CompositeCollider2D → `GenerateGeometry`; LogError on no tiles / no paths. unity-bridge: helper list + one gotcha line.

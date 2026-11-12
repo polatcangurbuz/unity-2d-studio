@@ -85,10 +85,10 @@ namespace Studio.EditorTools
             Flush(null);
         }
 
-        // Each Play replaces the previous Play's errors, so readers never mistake an old run for the current one.
+        // Each Play replaces the last one's errors; cleared on leaving Edit Mode since Awake errors precede EnteredPlayMode.
         private static void OnPlayMode(PlayModeStateChange state)
         {
-            if (state != PlayModeStateChange.EnteredPlayMode) return;
+            if (state != PlayModeStateChange.ExitingEditMode) return;
             Entries.RemoveAll(e => Body(e).Contains(" [play] ") || Body(e).StartsWith("play start"));
             Add("play start");
             Flush("play");

@@ -5,8 +5,8 @@ Sections: Setup · Folders · Scenes and prefabs · Hierarchy · Inspector · Gi
 
 ## Setup
 `python <skill>/scripts/install_unity.py` → `Assets/_Project/Code/Editor/` (StudioSetup, StudioAsmdefs, StudioEditorUtil, StudioConsoleBridge,
-SpriteImportRules, VfxBuilder, `Templates~/` git files; keeps existing) → `python <skill>/scripts/asmdefs.py` (asmdefs now, same as the click)
-→ compile → **Tools > Studio > Setup Project**.
+SpriteImportRules, VfxBuilder, Play Check + Requests, Anim/Ui/Light/Camera utils, Platform presets, `Templates~/` git files; keeps existing) → `python <skill>/scripts/asmdefs.py` (asmdefs now, same as the click)
+→ compile → **Tools > Studio > Setup Project** (via `.studio/menu.request`, unity-bridge § Requests).
 Idempotent. Does:
 - folder tree below + asmdefs `<ns>.Core/Gameplay/UI/Editor/Tests.EditMode/Tests.PlayMode` (`ns` from `.studio/brief.md` `ns:`, else company + product)
   with package refs from `Packages/manifest.json`; existing asmdefs only get missing package refs. Type → asmdef reference:
@@ -16,6 +16,9 @@ Idempotent. Does:
   | `Text`, `Image`, `Button` / `TMP_Text` | `UnityEngine.UI` / `Unity.TextMeshPro` (UI, Editor) |
   | `Light2D`, URP `PixelPerfectCamera` | `Unity.RenderPipelines.Universal.2D.Runtime` + `.Universal.Runtime` + `.Core.Runtime` (Gameplay, Editor) |
   | `TestRunnerApi` | `UnityEditor.TestRunner` + `UnityEngine.TestRunner` (Editor) |
+  | `CinemachineCamera` (CM 3.x only) | `Unity.Cinemachine` (Gameplay, Editor) |
+  | `SpriteSkin`, `SpriteResolver` | `Unity.2D.Animation.Runtime` (Gameplay) |
+  Editor asmdef gets defines `STUDIO_UGUI/TMP/URP/CINEMACHINE/TEST_RUNNER` when those packages are present (Studio utils compile out otherwise).
 - `Scenes/Bootstrap.unity` with separators + camera at build index 0;
 - Unity's default `Assets/Scenes/SampleScene.unity` → moved to `_Project/Scenes/` (deleted if empty), empty `Assets/Scenes/` removed;
 - Force Text + Visible Meta Files; copies `Templates~/gitignore.txt`/`gitattributes.txt` to root if missing; logs UnityYAMLMerge config.

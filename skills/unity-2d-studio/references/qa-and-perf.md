@@ -1,5 +1,5 @@
 When to read: reviewing a task, writing tests, profiling, phase gate/release. Read only the needed `##` section.
-Sections: Tests · check_code · Review · Budgets · Gates
+Sections: Tests · check_code · Review · Budgets · Platforms · Gates
 
 # QA and performance
 
@@ -29,6 +29,8 @@ CI/pre-commit option: `python <skill>/scripts/check_code.py --quiet || exit 1`
 9. YAGNI: no unrequested asmdef/menu/base class; no generic base/wrapper with one user; pools use `ObjectPool<T>` directly.
 10. `Assets/_Project/`, namespace = asmdef, one class per file. Map refreshed; handoff ≤20 lines, accurate.
 Findings (telegraph, handoff `review:`): `file:line | problem | fix`.
+play-check.txt + shots (unity-bridge § Play check) are the evidence for scene tasks: `clean` + shots matching the acceptance → pass;
+shots not read → `unverified`.
 console.log evidence: only lines after the last `play start` belong to the current Play; `package-…` lines are Unity packages,
 not the task; a play error older than the last `mark build` or scene save → stale, say `unverified`, never `fail`.
 
@@ -37,6 +39,12 @@ Per platform in `gdd.md` § Tech. Mid mobile / PC:
 frame ≤11 ms main thread · GC 0 B/frame in gameplay · draw calls ≤100, SetPass ≤30 after atlasing · ≤1000 active particles, pooled ·
 atlases ≤2048² mobile, compressed except pixel art · Bootstrap → playable ≤3 s.
 Profile dev build on slowest target, not editor. Tools: Profiler (CPU, Memory), Frame Debugger, Memory Profiler package.
+
+## Platforms
+`Tools/Studio/Platform Preset/{Mobile Portrait, Mobile Landscape, WebGL, PC}` (via menu.request) sets Player Settings, writes `.studio/platform.md`;
+never switches the build target (user does, it reimports everything). Mobile: IL2CPP, ARM64, Android API 24+, ASTC, stripping Low,
+orientation locked, frame pacing · WebGL: Gzip + fallback, data caching, exceptions explicitly thrown only · PC: windowed fullscreen 1920×1080, vSync.
+Then: target 60 fps mobile (`Application.targetFrameRate = 60` in Bootstrap), safe area on all UI (ui § Canvas), audio Vorbis, atlases per screen.
 
 ## Gates
 Vertical slice: start → win/lose, no Console errors, smoke green, check_code clean, budgets met on target.

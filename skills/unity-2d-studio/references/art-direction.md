@@ -1,13 +1,41 @@
 When to read: art bible, palette, value/silhouette rules, reference-game analysis, mood board, sprite import, accessibility. Read only the needed `##` section.
-Sections: Order · Art bible · Palette · References · Boards · Import · Accessibility
+Sections: Order · Pipeline · Blender · Art bible · Palette · References · Boards · Import · Accessibility
 
 # Art direction
 
 ## Order
 Direction before production (no asset prompt before the bible exists and the user approved it):
-brief (style, PPU, refs) → pillars → palette (`palette.py`) → values/shapes/resolution → board → user OK → prompts (image-prompting).
+brief (style, PPU, refs) → pillars → palette (`palette.py`) → values/shapes/resolution → board → user OK → § Pipeline → production.
 Every later art task reads `.studio/art/art-bible.md` only, not this file again.
 One-time outputs (`art-bible.md`, `palette.html`, `model-notes.md`) exist → read, never regenerate; rerun `palette.py` only when the user changes the palette.
+
+## Pipeline
+First asset-production task and `.studio/brief.md` has no `art-pipeline:` → detect, then ask ONE question (user's language), record the answer:
+- detect (one parallel batch): `python <skill>/scripts/blender_sprites.py check` · ToolSearch "image generate" / "pixel" (image MCP tools).
+- offer only what works, cheapest first, with a one-line trade-off each; default = the first:
+| Option | Best for | Cost | Quality |
+|---|---|---|---|
+| `prompt` (skill's current path) | any style; user runs the image model | lowest tokens; user's model plan | depends on model + § After generation cleanup |
+| `blender` (headless script, MCP only to model) | gems, items, props, icons, boosters, crates, isometric/3D-look sets | free, no API key; Blender installed | consistent light/scale across sets |
+| `image-mcp` (Gemini/PixelLab/other MCP the user connects) | characters, backgrounds, painted/pixel styles | provider credits per image | high, needs a style anchor for consistency |
+Write `art-pipeline: <option> (+ mcp: <tool prefix>)` in the brief; never ask again unless the user wants to switch. Mixed is fine
+(`blender` for pieces, `image-mcp` for characters): record per asset type. Placeholders (`placeholder_sprites.py`, pack placeholder art) need no choice.
+Cost rules for every path: one approved style anchor first (1-3 assets), then the batch; judge sets by ONE preview board, not per file;
+redo only rejected assets; never regenerate approved ones.
+- `prompt` → image-prompting § Sprite prompt → user generates → § After generation (`sprite_from_image.py`).
+- `blender` → § Blender.
+- `image-mcp` → image-prompting § Model notes (the MCP's model) + § MCP.
+
+## Blender
+`python <skill>/scripts/blender_sprites.py new <set> --preset gems|model` → edit `.studio/art/blender/<set>.json` → `render <set>` (~1-2 s/sprite).
+- Spec: `out`, `size` (px = one cell at PPU = size), `view` top|front|iso, `shadow` (soft ground shadow), `look` (roughness, coat, key/rim/fill
+  light, sheen, world), `items`: `gem` (sides 0 = round, 3-8; `angle`; `color` hex or palette role) or `model` (`file` .blend/.glb/.fbx/.obj,
+  `yaw` list → directions, `frames` list → animation frames; all in one `<name>_sheet_<W>x<H>.png`, same scale).
+- Read only `.studio/art/blender/<set>_preview.png`. Tune `look` once for the set (too flat → key/sheen up; washed out → key down, roughness up).
+- Models: simple props → write a short bpy script (primitives, bevel, materials; headless `blender -b --python`); complex sculpted shapes →
+  Blender MCP if connected, save `.blend` under `Assets/_Project/Art/Models/` (or outside Assets/ to keep it out of the build) → render.
+  CC0 models (e.g. Kenney, Poly Haven) also work; log them in `deps.md`.
+- Pixel-art look: render at 4-8× size, then `sprite_from_image.py --cell WxH --key none` (block downscale + palette).
 
 ## Art bible
 `.studio/art/art-bible.md` ≤60 lines. `palette.py set` creates the skeleton + palette table. Fill:
